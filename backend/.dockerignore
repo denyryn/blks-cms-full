@@ -1,0 +1,9 @@
+node_modules
+vendor
+.git
+.env
+storage/app/public
+public/storage
+.DS_Store
+Thumbs.db
+*.log

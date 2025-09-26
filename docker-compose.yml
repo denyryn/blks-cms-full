@@ -1,0 +1,92 @@
+version: "3.8"
+
+services:
+  # ------------------------------------------------------------------
+  # MySQL 8
+  # ------------------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: laravel-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default
+
+  # ------------------------------------------------------------------
+  # Laravel API (php artisan serve)
+  # ------------------------------------------------------------------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: laravel-api
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html # live source code
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: laravel
+      DB_USERNAME: laravel
+      DB_PASSWORD: secret
+      # Sanctum cookie-domain so the browser accepts the CSRF cookie
+      SANCTUM_STATEFUL_DOMAINS: localhost:5174,localhost:8000
+    command: >
+      sh -c "
+        if [ ! -f .env ]; then cp .env.example .env; fi &&
+        composer install --no-interaction --prefer-dist &&
+        php artisan key:generate &&
+        php artisan migrate --force &&
+        php artisan storage:link &&
+        php artisan serve --host=0.0.0.0 --port=8000
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+
+  # ------------------------------------------------------------------
+  # Vite frontend (Node 20)
+  # ------------------------------------------------------------------
+  frontend:
+    image: node:20-alpine
+    container_name: vite-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # speed-up on linux
+    ports:
+      - "5174:5173"
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      VITE_API_URL: http://localhost:8000 # <-- used in your axios/fetch baseURL
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - api
+    networks:
+      - default
+
+volumes:
+  dbdata:
+
+networks:
+  default:
+    driver: bridge
