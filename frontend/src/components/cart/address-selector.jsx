@@ -8,7 +8,6 @@ import { useUserAddresses } from "@/hooks/queries/user-addresses.query";
 
 export function AddressSelector({ selectedAddressId, onAddressSelect }) {
   const { data: addresses = [], isLoading, error } = useUserAddresses();
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Automatically select default address when addresses load
   useEffect(() => {
@@ -71,11 +70,7 @@ export function AddressSelector({ selectedAddressId, onAddressSelect }) {
             <p className="text-red-600 mb-4">
               Gagal memuat alamat: {error.message}
             </p>
-            <UserAddressModal
-              triggerElement={<AddAddressButton />}
-              isOpen={isAddModalOpen}
-              setIsOpen={setIsAddModalOpen}
-            />
+            <UserAddressModal triggerElement={<AddAddressButton />} />
           </div>
         </CardContent>
       </Card>
@@ -102,8 +97,6 @@ export function AddressSelector({ selectedAddressId, onAddressSelect }) {
             </p>
             <UserAddressModal
               triggerElement={<AddAddressButton />}
-              isOpen={isAddModalOpen}
-              setIsOpen={setIsAddModalOpen}
               onSuccess={() => {
                 // Refresh will happen automatically due to React Query
               }}
@@ -129,8 +122,6 @@ export function AddressSelector({ selectedAddressId, onAddressSelect }) {
                 Tambah
               </Button>
             }
-            isOpen={isAddModalOpen}
-            setIsOpen={setIsAddModalOpen}
             onSuccess={() => {
               // Refresh will happen automatically due to React Query
             }}

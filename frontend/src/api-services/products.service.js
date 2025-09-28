@@ -5,6 +5,7 @@ export async function getProducts({
   perPage = 10,
   sort,
   category_id,
+  search,
 }) {
   let url = `/api/products?page=${page}&per_page=${perPage}`;
 
@@ -14,6 +15,10 @@ export async function getProducts({
 
   if (category_id && category_id !== "all") {
     url += `&category_id=${category_id}`;
+  }
+
+  if (search) {
+    url += `&search=${search}`;
   }
 
   return Fetcher.fetch(url, {

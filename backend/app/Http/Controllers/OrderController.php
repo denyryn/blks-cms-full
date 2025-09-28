@@ -108,9 +108,17 @@ class OrderController extends Controller
                 'user_id' => $validated['user_id'],
                 'user_address_id' => $validated['user_address_id'],
                 'total_price' => $totalPrice,
-                'payment_proof' => $validated['payment_proof'] ?? null,
+                'payment_proof' => null,
                 'status' => $validated['status'] ?? 'pending'
             ];
+
+            // Handle payment proof file upload
+            if ($request->hasFile('payment_proof')) {
+                $file = $request->file('payment_proof');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('payment_proofs', $filename, 'public');
+                $orderData['payment_proof'] = $path;
+            }
 
             $order = Order::create($orderData);
 

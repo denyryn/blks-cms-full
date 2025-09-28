@@ -65,7 +65,7 @@ class UserAddress extends Model
      */
     public function orders()
     {
-        return $this->hasMany(Order::class);
+        return $this->hasMany(Order::class, 'user_address_id');
     }
 
     /**

@@ -166,13 +166,14 @@ export default function ContactPage() {
             hotline kami atau kunjungi live chat di website.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg">
+            <Button
+              size="lg"
+              onClick={() => {
+                window.open("https://wa.me/6281234567890", "_blank");
+              }}
+            >
               <Phone className="h-4 w-4 mr-2" />
               Hotline: 0812-3456-7890
-            </Button>
-            <Button variant="outline" size="lg">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Live Chat
             </Button>
           </div>
         </CardContent>

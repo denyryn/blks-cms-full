@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useOrder } from "@/hooks/queries/orders.query";
-import { formatDate, formatPrice } from "@/lib/utils";
+import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
 import {
   Package,
   Clock,
@@ -74,32 +74,6 @@ export default function OrderDetailsPage() {
       },
     };
     return statusMap[status] || statusMap.pending;
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatDateTime = (dateString) => {
-    return new Date(dateString).toLocaleString("id-ID", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   const copyToClipboard = (text) => {
@@ -380,10 +354,10 @@ export default function OrderDetailsPage() {
                     onSuccess={() => window.location.reload()}
                   />
                 )}
-              <Button variant="outline" className="w-full justify-start">
+              {/* <Button variant="outline" className="w-full justify-start">
                 <Download className="h-4 w-4 mr-2" />
                 Download Invoice
-              </Button>
+              </Button> */}
               {order?.shipping?.trackingNumber && (
                 <Button
                   variant="outline"
@@ -394,10 +368,10 @@ export default function OrderDetailsPage() {
                   Lacak Paket
                 </Button>
               )}
-              <Button variant="outline" className="w-full justify-start">
+              {/* <Button variant="outline" className="w-full justify-start">
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Hubungi Penjual
-              </Button>
+              </Button> */}
               {order?.status === "delivered" && (
                 <>
                   <Button className="w-full justify-start">
@@ -427,18 +401,19 @@ export default function OrderDetailsPage() {
                   ALAMAT PENGIRIMAN
                 </h4>
                 <div className="space-y-1">
-                  {order?.user_address ? (
+                  {order?.shipping_address ? (
                     <>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <span className="font-medium">
-                          {order.user_address.recipient_name || "Nama Penerima"}
+                          {order.shipping_address.recipient_name ||
+                            "Nama Penerima"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <span className="text-sm">
-                          {order.user_address.phone ||
+                          {order.shipping_address.phone ||
                             "Nomor telepon tidak tersedia"}
                         </span>
                       </div>
@@ -446,10 +421,10 @@ export default function OrderDetailsPage() {
                         <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                         <span className="text-sm leading-relaxed">
                           {[
-                            order.user_address.address,
-                            order.user_address.city,
-                            order.user_address.province,
-                            order.user_address.postal_code,
+                            order.shipping_address.address,
+                            order.shipping_address.city,
+                            order.shipping_address.province,
+                            order.shipping_address.postal_code,
                           ]
                             .filter(Boolean)
                             .join(", ")}

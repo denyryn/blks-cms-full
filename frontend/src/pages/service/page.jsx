@@ -364,13 +364,10 @@ export default function ServicePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
-              <Link to="/kontak">
+              <Link to="/contact">
                 Hubungi Kami Sekarang
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link to="/produk">Lihat Katalog Produk</Link>
             </Button>
           </div>
         </CardContent>

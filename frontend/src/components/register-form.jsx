@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import config from "@/lib/config";
 import { useState } from "react";
-import { register } from "@/api-services/auth.service";
 import { toast } from "sonner";
 import { Link } from "react-router";
 import flatten from "@/lib/flatten";
+import { useAuth } from "@/contexts/auth.context";
 
 export function RegisterForm({ className, ...props }) {
+  const { busy, user, isAdmin, register } = useAuth();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -24,19 +26,11 @@ export function RegisterForm({ className, ...props }) {
 
   const formSubmit = async (e) => {
     e.preventDefault();
-    const { response, data } = await register(formData);
-
-    if (!response.ok) {
-      // Registration failed
-      toast.error(
-        flatten(data.errors) || "Registration failed. Please try again."
-      );
-      return;
-    }
-
-    // Registration successful
-    toast.success(data.message || "Registration successful!");
+    await register(formData);
   };
+
+  const buttonContent = () =>
+    busy ? <Loader className="animate-spin" /> : <span>Login</span>;
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -94,8 +88,8 @@ export function RegisterForm({ className, ...props }) {
                 />
               </div>
 
-              <Button type="submit" className="w-full">
-                Register
+              <Button type="submit" disabled={busy} className="w-full">
+                {buttonContent()}
               </Button>
 
               <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">

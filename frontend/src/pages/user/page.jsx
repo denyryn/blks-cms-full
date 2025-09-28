@@ -17,12 +17,8 @@ export default function UserPage() {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    await logout.mutateAsync();
+    window.location.href = "/";
   };
 
   // Show loading spinner while auth is loading

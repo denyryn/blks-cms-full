@@ -17,14 +17,7 @@ export function AddressesInformation() {
   const setAddressAsDefault = useSetAddressAsDefault();
 
   const handleSetDefaultAddress = async (id) => {
-    const { response } = await setAddressAsDefault(id);
-
-    if (!response.ok) {
-      toast.error("Gagal mengatur alamat default");
-      return;
-    }
-
-    toast.success("Alamat default berhasil diatur");
+    await setAddressAsDefault.mutateAsync(id);
   };
 
   const AddAddressDialogTrigger = () => (

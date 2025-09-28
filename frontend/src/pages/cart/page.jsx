@@ -19,7 +19,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useCart } from "@/contexts/cart.context";
 import { useAuth } from "@/contexts/auth.context";
 import { useUserAddresses } from "@/hooks/queries/user-addresses.query";
@@ -48,6 +48,7 @@ export default function CartPage() {
     useUserDefaultAddress();
   const createOrder = useCreateOrder();
 
+  const navigate = useNavigate();
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -88,7 +89,7 @@ export default function CartPage() {
   );
   const discount = appliedPromo ? subtotal * appliedPromo.discount : 0;
   const shipping = subtotal > 500000 ? 0 : 15000; // Free shipping over 500k
-  const total = subtotal - discount + shipping;
+  const total = subtotal; // - discount + shipping;
 
   function handleCheckout() {
     if (!selectedAddress) {
@@ -101,6 +102,8 @@ export default function CartPage() {
       user_address_id: selectedAddress.id,
       cart_ids: cartItems.map((item) => item.id),
     });
+
+    navigate("/orders");
   }
 
   // Show loading state
@@ -291,7 +294,7 @@ export default function CartPage() {
             />
 
             {/* Promo Code */}
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Tag className="h-5 w-5" />
@@ -338,7 +341,7 @@ export default function CartPage() {
                   </div>
                 )}
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Order Summary */}
             <Card>
@@ -358,7 +361,7 @@ export default function CartPage() {
                   </div>
                 )}
 
-                <div className="flex justify-between">
+                {/* <div className="flex justify-between">
                   <span className="text-muted-foreground">Ongkos Kirim</span>
                   <span className="font-medium">
                     {shipping === 0 ? (
@@ -367,7 +370,7 @@ export default function CartPage() {
                       formatPrice(shipping)
                     )}
                   </span>
-                </div>
+                </div> */}
 
                 <Separator />
 
@@ -376,7 +379,7 @@ export default function CartPage() {
                   <span className="text-primary">{formatPrice(total)}</span>
                 </div>
 
-                {subtotal < 500000 && (
+                {/* {subtotal < 500000 && (
                   <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg">
                     <div className="flex items-center gap-2 mb-1">
                       <Truck className="h-4 w-4 text-blue-500" />
@@ -387,7 +390,7 @@ export default function CartPage() {
                     Belanja {formatPrice(500000 - subtotal)} lagi untuk
                     mendapatkan gratis ongkir!
                   </div>
-                )}
+                )} */}
               </CardContent>
             </Card>
 

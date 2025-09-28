@@ -5,6 +5,8 @@ import { Toaster } from "sonner";
 
 import { AuthProvider } from "./contexts/auth.context.jsx";
 import { CartProvider } from "./contexts/cart.context.jsx";
+
+import ErrorBoundary from "@/pages/errors/global.boundary";
 import router from "@/routes";
 
 const queryClient = new QueryClient();
@@ -16,7 +18,9 @@ export default function App() {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <CartProvider>
-              <RouterProvider router={router} />
+              <ErrorBoundary>
+                <RouterProvider router={router} />
+              </ErrorBoundary>
             </CartProvider>
           </AuthProvider>
         </ThemeProvider>

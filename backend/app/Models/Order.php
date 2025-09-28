@@ -30,7 +30,7 @@ class Order extends Model
 
     public function shippingAddress()
     {
-        return $this->belongsTo(UserAddress::class);
+        return $this->belongsTo(UserAddress::class, 'user_address_id');
     }
 
     public function orderDetails()

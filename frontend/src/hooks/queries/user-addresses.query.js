@@ -11,7 +11,7 @@ import {
 } from "@/api-services/user-addresses.service";
 import { toast } from "sonner";
 
-/* ---------- QUERIES ---------- */
+/* ---------- QUERIES (errors only) ---------- */
 
 // GET /api/user_addresses (all addresses for auth user)
 export const useUserAddresses = () =>
@@ -19,8 +19,13 @@ export const useUserAddresses = () =>
     queryKey: ["user-addresses"],
     queryFn: async () => {
       const { data: json, response } = await getUserAddresses();
-      if (!response.ok) toast.error(json.message);
+      if (!response.ok) {
+        throw new Error(json.message || "Gagal memuat alamat");
+      }
       return json.data;
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -30,28 +35,48 @@ export const useUserDefaultAddress = () =>
     queryKey: ["user-addresses", "default"],
     queryFn: async () => {
       const { data: json, response } = await getUserDefaultAddress();
-      if (!response.ok) toast.error(json.message);
+      if (!response.ok) {
+        throw new Error(json.message || "Gagal memuat alamat default");
+      }
       return json.data;
     },
-    select: (data) => data.find((addr) => addr.is_default), // adapt if endpoint already filters
+    select: (data) => data.find((addr) => addr.is_default), // adapt if API already returns single
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 
 // GET /api/user_addresses/:id (single)
 export const useUserAddress = (id) =>
   useQuery({
     queryKey: ["user-addresses", id],
-    queryFn: () => getUserAddress(id),
+    queryFn: async () => {
+      const { data: json, response } = await getUserAddress(id);
+      if (!response.ok) {
+        throw new Error(json.message || "Gagal memuat detail alamat");
+      }
+      return json.data;
+    },
     enabled: !!id,
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 
-/* ---------- MUTATIONS ---------- */
+/* ---------- MUTATIONS (success + error) ---------- */
 
 // POST /api/user_addresses
 export const useCreateUserAddress = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: createUserAddress,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["user-addresses"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-addresses"] });
+      toast.success("Alamat berhasil ditambahkan");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Gagal menambahkan alamat");
+    },
   });
 };
 
@@ -63,6 +88,10 @@ export const useUpdateUserAddress = () => {
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ["user-addresses", id] });
       qc.invalidateQueries({ queryKey: ["user-addresses"] });
+      toast.success("Alamat berhasil diperbarui");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Gagal memperbarui alamat");
     },
   });
 };
@@ -72,7 +101,13 @@ export const useDeleteUserAddress = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteUserAddress,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["user-addresses"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-addresses"] });
+      toast.success("Alamat berhasil dihapus");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Gagal menghapus alamat");
+    },
   });
 };
 
@@ -81,6 +116,12 @@ export const useSetAddressAsDefault = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: setAddressAsDefault,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["user-addresses"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-addresses"] });
+      toast.success("Alamat utama berhasil diubah");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Gagal mengubah alamat utama");
+    },
   });
 };

@@ -8,7 +8,7 @@ import LandingPage from "@/pages/landing/page";
 import ProductDetailsPage from "@/pages/product/details/page";
 import ProductPage from "@/pages/product/page";
 import ServicePage from "@/pages/service/page";
-
+import NotFoundPage from "@/pages/errors/404";
 import { Navigate } from "react-router";
 
 let publicRoutes = [
@@ -72,6 +72,10 @@ let publicRoutes = [
         Component: RegisterPage,
       },
     ],
+  },
+  {
+    path: "*",
+    Component: NotFoundPage,
   },
 ];
 
