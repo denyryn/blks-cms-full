@@ -40,3 +40,14 @@ export async function updateOrder({ id, payment_proof }) {
     false
   );
 }
+
+export async function updateOrderStatus({ id, status }) {
+  // Get CSRF cookie
+  await Fetcher.csrf();
+  return Fetcher.fetch(`/api/orders/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      status,
+    }),
+  });
+}
