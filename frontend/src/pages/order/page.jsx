@@ -21,147 +21,77 @@ import {
   ArrowLeft,
   RefreshCw,
 } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useOrders } from "@/hooks/queries/orders.query";
+import { formatDate, formatPrice } from "@/lib/utils";
 
 export default function OrderPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const { data: orders = [], isLoading: isOrderLoading, error } = useOrders();
+  const navigate = useNavigate();
 
-  // Sample order data
-  const [orders] = useState([
-    {
-      id: "ORD-2024-001",
-      date: "2024-09-20",
-      status: "delivered",
-      total: 387000,
-      items: [
-        {
-          id: 1,
-          name: "Arduino Uno R3 Original",
-          quantity: 2,
-          price: 125000,
-          image: "/src/assets/arduino-parts.jpg",
-        },
-        {
-          id: 2,
-          name: "Sensor Ultrasonik HC-SR04",
-          quantity: 1,
-          price: 25000,
-          image: "/src/assets/arduino-parts.jpg",
-        },
-      ],
-      shipping: {
-        address: "Jl. Sudirman No. 123, Jakarta Pusat 10270",
-        method: "JNE Reguler",
-        cost: 12000,
-        trackingNumber: "JNE1234567890",
-      },
-      payment: {
-        method: "Transfer Bank BCA",
-        status: "paid",
-      },
-    },
-    {
-      id: "ORD-2024-002",
-      date: "2024-09-18",
-      status: "shipping",
-      total: 167000,
-      items: [
-        {
-          id: 3,
-          name: "Breadboard 830 Lubang",
-          quantity: 3,
-          price: 15000,
-          image: "/src/assets/arduino-parts.jpg",
-        },
-        {
-          id: 4,
-          name: "Jumper Wire Male-Female",
-          quantity: 2,
-          price: 12000,
-          image: "/src/assets/arduino-parts.jpg",
-        },
-      ],
-      shipping: {
-        address: "Jl. Gatot Subroto No. 456, Jakarta Selatan 12920",
-        method: "JNT Express",
-        cost: 15000,
-        trackingNumber: "JNT9876543210",
-      },
-      payment: {
-        method: "QRIS",
-        status: "paid",
-      },
-    },
-    {
-      id: "ORD-2024-003",
-      date: "2024-09-15",
-      status: "processing",
-      total: 289000,
-      items: [
-        {
-          id: 5,
-          name: "ESP32 DevKit V1",
-          quantity: 1,
-          price: 89000,
-          image: "/src/assets/arduino-parts.jpg",
-        },
-        {
-          id: 6,
-          name: "LCD 16x2 I2C",
-          quantity: 2,
-          price: 45000,
-          image: "/src/assets/arduino-parts.jpg",
-        },
-      ],
-      shipping: {
-        address: "Jl. Thamrin No. 789, Jakarta Pusat 10350",
-        method: "GoSend Same Day",
-        cost: 25000,
-        trackingNumber: null,
-      },
-      payment: {
-        method: "Credit Card",
-        status: "paid",
-      },
-    },
-    {
-      id: "ORD-2024-004",
-      date: "2024-09-12",
-      status: "cancelled",
-      total: 156000,
-      items: [
-        {
-          id: 7,
-          name: "Servo Motor SG90",
-          quantity: 4,
-          price: 18000,
-          image: "/src/assets/arduino-parts.jpg",
-        },
-        {
-          id: 8,
-          name: "Resistor Kit 1/4W",
-          quantity: 1,
-          price: 35000,
-          image: "/src/assets/arduino-parts.jpg",
-        },
-      ],
-      shipping: {
-        address: "Jl. HR Rasuna Said No. 321, Jakarta Selatan 12940",
-        method: "JNE Reguler",
-        cost: 12000,
-        trackingNumber: null,
-      },
-      payment: {
-        method: "Transfer Bank Mandiri",
-        status: "refunded",
-      },
-    },
-  ]);
+  // Show loading state
+  if (isOrderLoading) {
+    return (
+      <div className="container mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+            Pesanan Saya
+          </h1>
+          <p className="text-muted-foreground">
+            Kelola dan lacak semua pesanan Anda di sini
+          </p>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-6 py-8">
+        <div className="text-center py-16">
+          <Package className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
+          <h1 className="text-3xl font-bold text-foreground mb-4">
+            Gagal Memuat Pesanan
+          </h1>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            {error.message ||
+              "Terjadi kesalahan saat memuat pesanan. Silakan coba lagi."}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Coba Lagi
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusInfo = (status) => {
     const statusMap = {
+      pending: {
+        label: "Menunggu",
+        variant: "secondary",
+        icon: Clock,
+        color: "text-orange-600",
+        bgColor: "bg-orange-50",
+      },
       processing: {
         label: "Diproses",
         variant: "secondary",
@@ -191,30 +121,14 @@ export default function OrderPage() {
         bgColor: "bg-red-50",
       },
     };
-    return statusMap[status] || statusMap.processing;
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    return statusMap[status] || statusMap.pending;
   };
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.items.some((item) =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      order.id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.order_details || []).some((detail) =>
+        detail.product?.name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     const matchesStatus =
       statusFilter === "all" || order.status === statusFilter;
@@ -250,7 +164,7 @@ export default function OrderPage() {
                       {statusInfo.label}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Pesanan pada {formatDate(order.date)}
+                      Pesanan pada {formatDate(order.created_at)}
                     </div>
                   </div>
                 </div>
@@ -262,36 +176,40 @@ export default function OrderPage() {
                   Produk yang Dipesan
                 </h3>
                 <div className="space-y-4">
-                  {order.items.map((item) => (
+                  {(order.order_details || []).map((detail) => (
                     <div
-                      key={item.id}
+                      key={detail.id}
                       className="flex items-center gap-4 p-4 border rounded-lg"
                     >
                       <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                         <img
-                          src={item.image}
-                          alt={item.name}
+                          src={
+                            detail.product?.image_url ||
+                            "/src/assets/placeholder.svg"
+                          }
+                          alt={detail.product?.name || "Product"}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.target.src =
-                              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0xMiA4VjEyTDE2IDE2IiBzdHJva2U9IiM5Y2EzYWYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=";
+                            e.target.src = "/src/assets/placeholder.svg";
                           }}
                         />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium">{item.name}</h4>
+                        <h4 className="font-medium">
+                          {detail.product?.name || "Unknown Product"}
+                        </h4>
                         <div className="flex items-center gap-4 mt-1">
                           <span className="text-sm text-muted-foreground">
-                            Qty: {item.quantity}
+                            Qty: {detail.quantity || 0}
                           </span>
                           <span className="font-medium">
-                            {formatCurrency(item.price)}
+                            {formatPrice(parseFloat(detail.price || 0))}
                           </span>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="font-semibold">
-                          {formatCurrency(item.price * item.quantity)}
+                          {formatPrice(detail.subtotal || 0)}
                         </div>
                       </div>
                     </div>
@@ -306,20 +224,32 @@ export default function OrderPage() {
                     Alamat Pengiriman
                   </h3>
                   <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm">{order.shipping.address}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{order.shipping.method}</span>
-                    </div>
-                    {order.shipping.trackingNumber && (
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-mono">
-                          {order.shipping.trackingNumber}
-                        </span>
+                    {order.shipping_address ? (
+                      <>
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm">
+                            {order.shipping_address}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Truck className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {order.shipping?.method || "Belum ditentukan"}
+                          </span>
+                        </div>
+                        {order.shipping?.trackingNumber && (
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-mono">
+                              {order.shipping.trackingNumber}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        Alamat pengiriman belum ditentukan
                       </div>
                     )}
                   </div>
@@ -330,17 +260,17 @@ export default function OrderPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{order.payment.method}</span>
+                      <span className="text-sm">
+                        {order.payment?.method || "Belum ditentukan"}
+                      </span>
                     </div>
                     <Badge
                       variant={
-                        order.payment.status === "paid"
-                          ? "secondary"
-                          : "destructive"
+                        order.payment_proof ? "secondary" : "destructive"
                       }
                       className="text-xs"
                     >
-                      {order.payment.status === "paid" ? "Lunas" : "Refund"}
+                      {order.payment_proof ? "Bukti Upload" : "Belum Bayar"}
                     </Badge>
                   </div>
                 </div>
@@ -355,18 +285,21 @@ export default function OrderPage() {
                   <div className="flex justify-between">
                     <span>Subtotal</span>
                     <span>
-                      {formatCurrency(order.total - order.shipping.cost)}
+                      {formatPrice(parseFloat(order.total_price || 0))}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Ongkos Kirim</span>
-                    <span>{formatCurrency(order.shipping.cost)}</span>
+                    <span>{formatPrice(order.shipping?.cost || 0)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
                     <span className="text-primary">
-                      {formatCurrency(order.total)}
+                      {formatPrice(
+                        parseFloat(order.total_price || 0) +
+                          (order.shipping?.cost || 0)
+                      )}
                     </span>
                   </div>
                 </div>
@@ -474,7 +407,7 @@ export default function OrderPage() {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <h3 className="font-semibold text-lg">{order.id}</h3>
+                      <h3 className="font-semibold text-lg">ORD-{order.id}</h3>
                       <Badge
                         variant={statusInfo.variant}
                         className="flex items-center gap-1"
@@ -487,33 +420,43 @@ export default function OrderPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        <span>{formatDate(order.date)}</span>
+                        <span>{formatDate(order.created_at)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Package className="h-4 w-4" />
-                        <span>{order.items.length} item</span>
+                        <span>
+                          {order.items_count || 0} item (
+                          {order.total_quantity || 0} qty)
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Truck className="h-4 w-4" />
-                        <span>{order.shipping.method}</span>
+                        <span>
+                          {order.shipping?.method || "Belum ditentukan"}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4" />
-                        <span>{order.payment.method}</span>
+                        <span>
+                          {order.payment?.method || "Belum ditentukan"}
+                        </span>
                       </div>
                     </div>
 
                     <div className="mt-4">
                       <div className="text-lg font-bold text-primary">
-                        {formatCurrency(order.total)}
+                        {formatPrice(parseFloat(order.total_price || 0))}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {order.items
+                        {(order.order_details || [])
                           .slice(0, 2)
-                          .map((item) => item.name)
+                          .map(
+                            (detail) =>
+                              detail.product?.name || "Unknown Product"
+                          )
                           .join(", ")}
-                        {order.items.length > 2 &&
-                          ` +${order.items.length - 2} lainnya`}
+                        {(order.order_details || []).length > 2 &&
+                          ` +${(order.order_details || []).length - 2} lainnya`}
                       </div>
                     </div>
                   </div>
@@ -521,12 +464,14 @@ export default function OrderPage() {
                   <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => setSelectedOrder(order)}
+                      onClick={() =>
+                        navigate("/orders/" + order.id + "/details")
+                      }
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       Detail
                     </Button>
-                    {order.shipping.trackingNumber &&
+                    {order.shipping?.trackingNumber &&
                       order.status === "shipping" && (
                         <Button variant="default">
                           <Truck className="h-4 w-4 mr-2" />

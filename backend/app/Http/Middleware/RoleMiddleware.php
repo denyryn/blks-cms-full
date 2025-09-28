@@ -32,6 +32,8 @@ class RoleMiddleware
             abort(403, 'Forbidden - Insufficient permissions');
         }
 
+        $request->merge(['roles' => $roles]);
+
         return $next($request);
     }
 }

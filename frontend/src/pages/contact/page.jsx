@@ -2,9 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "./form";
 import {
   Phone,
   Mail,
@@ -17,12 +15,6 @@ import {
 } from "lucide-react";
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const contactInfo = [
@@ -60,28 +52,17 @@ export default function ContactPage() {
     },
   ];
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    setFormData({ name: "", email: "", message: "" });
-
-    // Reset success message after 3 seconds
-    setTimeout(() => setIsSubmitted(false), 3000);
-  };
+  const renderSubmitted = () => (
+    <div className="text-center py-12">
+      <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+      <h3 className="text-xl font-bold text-foreground mb-2">
+        Pesan Berhasil Dikirim!
+      </h3>
+      <p className="text-muted-foreground">
+        Terima kasih atas pesan Anda. Tim kami akan segera menghubungi Anda.
+      </p>
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-6 py-8">
@@ -117,118 +98,9 @@ export default function ContactPage() {
           </CardHeader>
           <CardContent>
             {isSubmitted ? (
-              <div className="text-center py-12">
-                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-foreground mb-2">
-                  Pesan Berhasil Dikirim!
-                </h3>
-                <p className="text-muted-foreground">
-                  Terima kasih atas pesan Anda. Tim kami akan segera menghubungi
-                  Anda.
-                </p>
-              </div>
+              renderSubmitted()
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Name Field */}
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium">
-                      Nama Lengkap *
-                    </Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="name"
-                        name="name"
-                        type="text"
-                        placeholder="Masukkan nama lengkap Anda"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Email Field */}
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium">
-                      Email *
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="nama@email.com"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Message Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="message" className="text-sm font-medium">
-                    Pesan *
-                  </Label>
-                  <Textarea
-                    id="message"
-                    name="message"
-                    placeholder="Tuliskan pertanyaan atau pesan Anda di sini. Jelaskan detail proyek atau komponen yang Anda butuhkan..."
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    className="min-h-[120px] resize-y"
-                    required
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={isSubmitting}
-                    className="flex-1 sm:flex-none"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Mengirim...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4 mr-2" />
-                        Kirim Pesan
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="lg"
-                    onClick={() =>
-                      setFormData({ name: "", email: "", message: "" })
-                    }
-                    disabled={isSubmitting}
-                  >
-                    Reset Form
-                  </Button>
-                </div>
-
-                {/* Form Footer */}
-                <div className="text-xs text-muted-foreground pt-4 border-t">
-                  <p>
-                    * Field wajib diisi. Data Anda aman dan tidak akan dibagikan
-                    kepada pihak ketiga. Dengan mengirim form ini, Anda
-                    menyetujui untuk dihubungi oleh tim ProTech.id.
-                  </p>
-                </div>
-              </form>
+              <Form setIsSubmitted={setIsSubmitted} />
             )}
           </CardContent>
         </Card>

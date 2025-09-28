@@ -12,3 +12,11 @@ export function formatPrice(price) {
     minimumFractionDigits: 0,
   }).format(price);
 }
+
+export function formatDate(date) {
+  return new Date(date).toLocaleDateString("id-ID", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}

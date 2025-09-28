@@ -38,6 +38,20 @@ class UserAddress extends Model
         'is_default' => 'boolean',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::saving(function (UserAddress $address) {
+            if ($address->is_default) {
+                // Unset default for other addresses of the same user
+                static::where('user_id', $address->user_id)
+                    ->where('id', '!=', $address->id)
+                    ->update(['is_default' => false]);
+            }
+        });
+    }
+
     /**
      * Get the user that owns the address.
      */
@@ -51,7 +65,7 @@ class UserAddress extends Model
      */
     public function orders()
     {
-        return $this->hasMany(Order::class, 'shipping_address_id');
+        return $this->hasMany(Order::class);
     }
 
     /**

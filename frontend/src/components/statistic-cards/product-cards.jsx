@@ -33,6 +33,16 @@ export function ProductCards() {
     return new Intl.NumberFormat("en-US").format(num || 0);
   };
 
+  // Helper function to strip HTML tags and get plain text
+  const stripHtmlTags = (html) => {
+    if (!html) return "";
+    // Create a temporary div to parse HTML
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+    // Get text content and clean up extra whitespace
+    return tempDiv.textContent || tempDiv.innerText || "";
+  };
+
   // Helper function to get the top category
   const getTopCategory = () => {
     if (!data?.products_by_category?.length) return null;
@@ -110,16 +120,16 @@ export function ProductCards() {
       {/* Average Price Card */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Average Price</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {formatCurrency(data?.price_statistics?.average)}
-          </CardTitle>
-          <CardAction>
+          <CardDescription className={"flex items-center justify-between"}>
+            Average Price
             <Badge variant="outline">
               <IconCurrencyDollar className="size-4" />
               Competitive
             </Badge>
-          </CardAction>
+          </CardDescription>
+          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            {formatCurrency(data?.price_statistics?.average)}
+          </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
@@ -135,16 +145,16 @@ export function ProductCards() {
       {/* Top Category Card */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Top Category</CardDescription>
-          <CardTitle className="text-xl font-semibold @[250px]/card:text-2xl">
-            {topCategory?.category_name || "No categories"}
-          </CardTitle>
-          <CardAction>
+          <CardDescription className={"flex items-center justify-between"}>
+            Top Category
             <Badge variant="outline">
               <IconTrendingUp className="size-4" />
               {formatNumber(topCategory?.count || 0)} products
             </Badge>
-          </CardAction>
+          </CardDescription>
+          <CardTitle className="text-xl font-semibold @[250px]/card:text-2xl">
+            {topCategory?.category_name || "No categories"}
+          </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
@@ -179,9 +189,15 @@ export function ProductCards() {
             Premium product <IconTrendingUp className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            {data?.most_popular_products?.[0]?.description?.substring(0, 40) ||
-              "No description"}
-            ...
+            {(() => {
+              const description = data?.most_popular_products?.[0]?.description;
+              if (!description) return "No description available";
+
+              const cleanText = stripHtmlTags(description);
+              return cleanText.length > 40
+                ? `${cleanText.substring(0, 40)}...`
+                : cleanText || "No description available";
+            })()}
           </div>
         </CardFooter>
       </Card>

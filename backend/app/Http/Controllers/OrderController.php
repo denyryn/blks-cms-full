@@ -63,25 +63,70 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
 
+            $totalPrice = 0;
+            $orderDetails = [];
+
+            // Handle cart-based order
+            if (!empty($validated['cart_ids'])) {
+                // Get cart items
+                $cartItems = \App\Models\Cart::whereIn('id', $validated['cart_ids'])
+                    ->where('user_id', $validated['user_id'])
+                    ->with('product')
+                    ->get();
+
+                if ($cartItems->isEmpty()) {
+                    DB::rollBack();
+                    return $this->errorResponse(
+                        'No valid cart items found.',
+                        Response::HTTP_BAD_REQUEST
+                    );
+                }
+
+                // Calculate total price and prepare order details from cart
+                foreach ($cartItems as $cart) {
+                    $price = $cart->product->price;
+                    $quantity = $cart->quantity;
+                    $totalPrice += $quantity * $price;
+
+                    $orderDetails[] = [
+                        'product_id' => $cart->product_id,
+                        'quantity' => $quantity,
+                        'price' => $price
+                    ];
+                }
+            }
+            // Handle direct order with order_details
+            else {
+                foreach ($validated['order_details'] as $detail) {
+                    $totalPrice += $detail['quantity'] * $detail['price'];
+                    $orderDetails[] = $detail;
+                }
+            }
+
             // Create the order
             $orderData = [
                 'user_id' => $validated['user_id'],
-                'shipping_address_id' => $validated['shipping_address_id'],
-                'total_price' => $validated['total_price'],
+                'user_address_id' => $validated['user_address_id'],
+                'total_price' => $totalPrice,
                 'payment_proof' => $validated['payment_proof'] ?? null,
-                'status' => $validated['status']
+                'status' => $validated['status'] ?? 'pending'
             ];
 
             $order = Order::create($orderData);
 
             // Create order details
-            foreach ($validated['order_details'] as $detail) {
+            foreach ($orderDetails as $detail) {
                 OrderDetail::create([
                     'order_id' => $order->id,
                     'product_id' => $detail['product_id'],
                     'quantity' => $detail['quantity'],
                     'price' => $detail['price']
                 ]);
+            }
+
+            // Remove items from cart if this was a cart-based order
+            if (!empty($validated['cart_ids'])) {
+                \App\Models\Cart::whereIn('id', $validated['cart_ids'])->delete();
             }
 
             $order->load(['user', 'shippingAddress', 'orderDetails.product.category']);
@@ -150,126 +195,5 @@ class OrderController extends Controller
             null,
             'Order deleted successfully.'
         );
-    }
-
-    /**
-     * Get orders for the authenticated user.
-     */
-    public function getUserOrders(Request $request): JsonResponse
-    {
-        $request->validate([
-            'status' => 'nullable|string|in:pending,paid,shipped,completed,cancelled'
-        ]);
-
-        $user = $request->user();
-
-        $query = Order::where('user_id', $user->id)
-            ->with(['shippingAddress', 'orderDetails.product.category'])
-            ->orderBy('created_at', 'desc');
-
-        if ($request->get('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        $orders = $query->get();
-        $resource = OrderResource::collection($orders);
-
-        return $this->successResponse(
-            $resource,
-            'User orders retrieved successfully.'
-        );
-    }
-
-    /**
-     * Update order status.
-     */
-    public function updateStatus(Request $request, Order $order): JsonResponse
-    {
-        $request->validate([
-            'status' => 'required|string|in:pending,paid,shipped,completed,cancelled'
-        ]);
-
-        $order->update(['status' => $request->get('status')]);
-        $order->load(['user', 'shippingAddress', 'orderDetails.product.category']);
-
-        return $this->successResponse(
-            new OrderResource($order),
-            'Order status updated successfully.'
-        );
-    }
-
-    /**
-     * Create order from cart items.
-     */
-    public function createFromCart(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'shipping_address_id' => 'required|exists:user_addresses,id',
-            'cart_ids' => 'required|array|min:1',
-            'cart_ids.*' => 'exists:carts,id',
-            'payment_proof' => 'nullable|string|max:255'
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            // Get cart items
-            $cartItems = \App\Models\Cart::whereIn('id', $validated['cart_ids'])
-                ->where('user_id', $validated['user_id'])
-                ->with('product')
-                ->get();
-
-            if ($cartItems->isEmpty()) {
-                return $this->errorResponse(
-                    'No valid cart items found.',
-                    Response::HTTP_BAD_REQUEST
-                );
-            }
-
-            // Calculate total price
-            $totalPrice = $cartItems->sum(function ($cart) {
-                return $cart->quantity * $cart->product->price;
-            });
-
-            // Create order
-            $order = Order::create([
-                'user_id' => $validated['user_id'],
-                'shipping_address_id' => $validated['shipping_address_id'],
-                'total_price' => $totalPrice,
-                'payment_proof' => $validated['payment_proof'] ?? null,
-                'status' => 'pending'
-            ]);
-
-            // Create order details
-            foreach ($cartItems as $cart) {
-                OrderDetail::create([
-                    'order_id' => $order->id,
-                    'product_id' => $cart->product_id,
-                    'quantity' => $cart->quantity,
-                    'price' => $cart->product->price
-                ]);
-            }
-
-            // Remove items from cart
-            \App\Models\Cart::whereIn('id', $validated['cart_ids'])->delete();
-
-            $order->load(['user', 'shippingAddress', 'orderDetails.product.category']);
-
-            DB::commit();
-
-            return $this->successResponse(
-                new OrderResource($order),
-                'Order created from cart successfully.',
-                Response::HTTP_CREATED
-            );
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->errorResponse(
-                'Failed to create order from cart: ' . $e->getMessage(),
-                Response::HTTP_INTERNAL_SERVER_ERROR
-            );
-        }
     }
 }

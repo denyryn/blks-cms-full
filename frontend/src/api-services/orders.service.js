@@ -12,45 +12,31 @@ export async function getOrder(id) {
   });
 }
 
-export async function createOrder({
-  user_id,
-  shipping_address_id,
-  total_price,
-  payment_proof,
-  status,
-}) {
+export async function createOrder({ user_id, user_address_id, cart_ids }) {
   // Get CSRF cookie
   await Fetcher.csrf();
-  return Fetcher.fetch("/api/admin/orders", {
+  return Fetcher.fetch("/api/orders", {
     method: "POST",
     body: JSON.stringify({
       user_id,
-      shipping_address_id,
-      total_price,
-      payment_proof,
-      status,
+      user_address_id,
+      cart_ids,
     }),
   });
 }
 
-export async function updateOrder({
-  id,
-  user_id,
-  shipping_address_id,
-  total_price,
-  payment_proof,
-  status,
-}) {
+export async function updateOrder({ id, payment_proof }) {
   // Get CSRF cookie
   await Fetcher.csrf();
-  return Fetcher.fetch(`/api/admin/orders/${id}`, {
-    method: "PUT",
-    body: JSON.stringify({
-      user_id,
-      shipping_address_id,
-      total_price,
-      payment_proof,
-      status,
-    }),
-  });
+  const form = new FormData();
+  form.append("_method", "PUT");
+  form.append("payment_proof", payment_proof);
+  return Fetcher.fetch(
+    `/api/orders/${id}`,
+    {
+      method: "POST",
+      body: form,
+    },
+    false
+  );
 }

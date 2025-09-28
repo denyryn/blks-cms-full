@@ -6,8 +6,8 @@ export async function getCarts() {
   });
 }
 
-export function getCart(id) {
-  return Fetcher.fetch(`/api/admin/carts/${id}`, {
-    method: "GET",
+export default function clearCart() {
+  return Fetcher.fetch(`/api/admin/carts`, {
+    method: "DELETE",
   });
 }

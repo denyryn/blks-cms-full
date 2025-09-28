@@ -67,8 +67,12 @@ export async function updateProduct({
   form.append("category_id", category_id);
   form.append("name", name);
   form.append("description", description);
-  form.append("image", image);
   form.append("price", price);
+
+  if (image instanceof File) {
+    form.append("image", image);
+  }
+
   return Fetcher.fetch(
     `/api/admin/products/${id}`,
     {

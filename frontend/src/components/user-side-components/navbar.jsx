@@ -1,7 +1,15 @@
-import { ShoppingCart, Menu, X, User, LogOut, Settings } from "lucide-react";
+import {
+  ShoppingCart,
+  Menu,
+  X,
+  User,
+  LogOut,
+  Settings,
+  ReceiptText,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
-import { useAuth } from "@/contexts/auth.context";
+import { useAuth, IfAuth, IfNotAuth } from "@/contexts/auth.context";
 import Logo from "@/assets/logo.png";
 import config from "@/lib/config";
 import { cn } from "@/lib/utils";
@@ -15,12 +23,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useCart } from "@/contexts/cart.context";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const cartItemsCount = 4; // This would come from your cart context/state
+  const { totalItems: cartItemsCount } = useCart();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -95,39 +104,51 @@ const Navbar = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-2">
-            {/* Cart Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative hover:bg-muted"
-              onClick={() => navigate("/cart")}
-            >
-              <ShoppingCart className="h-5 w-5" />
-              {cartItemsCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                >
-                  {cartItemsCount > 99 ? "99+" : cartItemsCount}
-                </Badge>
-              )}
-              <span className="sr-only">Keranjang Belanja</span>
-            </Button>
+            <IfAuth>
+              {/* Cart Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative hover:bg-muted"
+                onClick={() => navigate("/cart")}
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartItemsCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                  >
+                    {cartItemsCount > 99 ? "99+" : cartItemsCount}
+                  </Badge>
+                )}
+                <span className="sr-only">Keranjang Belanja</span>
+              </Button>
 
-            {/* User Profile Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hover:bg-muted"
-              onClick={() => navigate("/user")}
-            >
-              <User className="h-5 w-5" />
-              <span className="sr-only">Profil Pengguna</span>
-            </Button>
+              {/* Order History Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-muted"
+                onClick={() => navigate("/orders")}
+              >
+                <ReceiptText className="h-5 w-5" />
+                <span className="sr-only">Riwayat Pesanan</span>
+              </Button>
+
+              {/* User Profile Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-muted"
+                onClick={() => navigate("/user")}
+              >
+                <User className="h-5 w-5" />
+                <span className="sr-only">Profil Pengguna</span>
+              </Button>
+            </IfAuth>
 
             {/* Authentication Actions */}
-            {isAuthenticated ? (
-              /* User Profile Dropdown */
+            <IfAuth>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -189,8 +210,10 @@ const Navbar = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              /* Login/Register Buttons for Guests */
+            </IfAuth>
+
+            {/* Login/Register Buttons for Guests */}
+            <IfNotAuth>
               <div className="hidden sm:flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -203,7 +226,7 @@ const Navbar = () => {
                   Daftar
                 </Button>
               </div>
-            )}
+            </IfNotAuth>
 
             {/* Mobile Menu Button */}
             <Button
@@ -244,36 +267,49 @@ const Navbar = () => {
                 </NavLink>
               ))}
 
-              {/* Mobile Cart Link */}
-              <div className="pt-2 mt-2 border-t">
-                <Link
-                  to="/cart"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-3 py-2 text-base font-medium text-primary hover:bg-primary/10 rounded-md transition-colors"
-                >
-                  <ShoppingCart className="h-5 w-5" />
-                  <span>Keranjang Belanja</span>
-                  {cartItemsCount > 0 && (
-                    <Badge variant="secondary" className="ml-auto">
-                      {cartItemsCount}
-                    </Badge>
-                  )}
-                </Link>
+              <IfAuth>
+                <div className="pt-2 mt-2 border-t">
+                  {/* Mobile Cart Link */}
+                  <Link
+                    to="/cart"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-3 px-3 py-2 text-base font-medium text-primary hover:bg-primary/10 rounded-md transition-colors"
+                  >
+                    <ShoppingCart className="h-5 w-5" />
+                    <span>Keranjang Belanja</span>
+                    {cartItemsCount > 0 && (
+                      <Badge variant="secondary" className="ml-auto">
+                        {cartItemsCount}
+                      </Badge>
+                    )}
+                  </Link>
 
-                {/* Mobile User Profile Link */}
-                <Link
-                  to="/user"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
-                >
-                  <User className="h-5 w-5" />
-                  <span>Profil Pengguna</span>
-                </Link>
-              </div>
+                  {/* Mobile User Profile Link */}
+                  <Link
+                    to="/orders"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-3 px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                  >
+                    <ReceiptText className="h-5 w-5" />
+                    <span>Riwayat Pesanan</span>
+                  </Link>
+
+                  {/* Mobile User Profile Link */}
+                  <Link
+                    to="/user"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-3 px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                  >
+                    <User className="h-5 w-5" />
+                    <span>Profil Pengguna</span>
+                  </Link>
+                </div>
+              </IfAuth>
 
               {/* Mobile Authentication Section */}
               <div className="pt-2 mt-2 border-t">
-                {isAuthenticated ? (
+                /* Authenticated User Menu */
+                <IfAuth>
                   /* Authenticated User Menu */
                   <div className="space-y-1">
                     <div className="flex items-center gap-3 px-3 py-2">
@@ -339,7 +375,8 @@ const Navbar = () => {
                       <span>Keluar</span>
                     </button>
                   </div>
-                ) : (
+                </IfAuth>
+                <IfNotAuth>
                   /* Guest User Menu */
                   <div className="space-y-1">
                     <Link
@@ -357,7 +394,7 @@ const Navbar = () => {
                       Daftar
                     </Link>
                   </div>
-                )}
+                </IfNotAuth>
               </div>
             </div>
           </div>

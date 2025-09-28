@@ -8,38 +8,41 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderDetailController;
 use App\Http\Controllers\UserAddressController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\StatisticsController;
 
 Route::middleware(['auth.cookie', 'role:admin'])->prefix('admin')->group(function () {
-    // Admin product management
-    Route::get('products', [ProductController::class, 'adminIndex'])
-        ->name('admin.products.index');
-    Route::post('products', [ProductController::class, 'store'])
-        ->name('products.store');
-    Route::get('products/{product}', [ProductController::class, 'adminShow'])
-        ->name('admin.products.show');
-    Route::put('products/{product}', [ProductController::class, 'update'])
-        ->name('products.update');
-    Route::delete('products/{product}', [ProductController::class, 'destroy'])
-        ->name('products.destroy');
+    Route::resource('users', UserController::class)
+        ->except(['create', 'edit']);
 
-    // Admin category management
-    Route::get('categories', [CategoryController::class, 'adminIndex'])
-        ->name('admin.categories.index');
-    Route::post('categories', [CategoryController::class, 'store'])
-        ->name('categories.store');
-    Route::get('categories/{category}', [CategoryController::class, 'adminShow'])
-        ->name('admin.categories.show');
-    Route::put('categories/{category}', [CategoryController::class, 'update'])
-        ->name('categories.update');
-    Route::delete('categories/{category}', [CategoryController::class, 'destroy'])
-        ->name('categories.destroy');
+    // Admin product management
+    Route::get('products', [ProductController::class, 'adminIndex']);
+    Route::get('products/{product}', [ProductController::class, 'adminShow']);
+    Route::resource('products', ProductController::class)
+        ->except(['create', 'edit', 'index', 'show',]);
+
+    // Admin category management  
+    Route::get('categories', [CategoryController::class, 'adminIndex']);
+    Route::get('categories/{category}', [CategoryController::class, 'adminShow']);
+    Route::resource('categories', CategoryController::class)
+        ->except(['create', 'edit', 'index', 'show',]);
 
     // Admin cart management - only viewing capabilities
-    Route::get('carts', [CartController::class, 'adminIndex'])
-        ->name('admin.carts.index');
-    Route::get('carts/{cart}', [CartController::class, 'adminShow'])
-        ->name('admin.carts.show');
+    Route::get('carts', [CartController::class, 'adminIndex']);
+    Route::get('carts/{cart}', [CartController::class, 'adminShow']);
+
+    // Admin order management
+    Route::resource('orders', OrderController::class)
+        ->except(['create', 'edit']);
+
+    Route::resource('order-details', OrderDetailController::class)
+        ->except(['create', 'edit']);
+
+    Route::resource('user-addresses', UserAddressController::class)
+        ->except(['create', 'edit']);
+
+    Route::resource('guest-messages', GuestMessageController::class)
+        ->except(['store']);
 
     // Admin statistics
     Route::prefix('statistics')->name('admin.statistics.')->group(function () {
@@ -58,7 +61,4 @@ Route::middleware(['auth.cookie', 'role:admin'])->prefix('admin')->group(functio
         Route::get('guest-messages', [GuestMessageController::class, 'statistics'])
             ->name('guest-messages');
     });
-
-    Route::resource('guest-messages', GuestMessageController::class)
-        ->except(['store']);
 });

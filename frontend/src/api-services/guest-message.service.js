@@ -15,7 +15,7 @@ export async function getGuestMessage(id) {
   });
 }
 
-export async function createGuestMessage({ name, email, message }) {
+export async function storeGuestMessage({ name, email, message }) {
   return Fetcher.fetch("/api/guest-messages", {
     method: "POST",
     body: JSON.stringify({ name, email, message }),

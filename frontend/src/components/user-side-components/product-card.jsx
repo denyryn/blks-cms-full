@@ -2,8 +2,9 @@ import config from "@/lib/config";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Eye, ShoppingCart } from "lucide-react";
+import { ArrowRight, Eye, ShoppingCart, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useCartActions } from "@/contexts/cart.context";
 
 export default function ProductCard({
   product,
@@ -13,9 +14,19 @@ export default function ProductCard({
   onHover,
 }) {
   const navigate = useNavigate();
+  const { isInCart, quantity, isLoading, add, increment, decrement } =
+    useCartActions(product.id);
 
   const handleViewDetails = () => {
     navigate(`/products/${product.id}`);
+  };
+
+  const handleAddToCart = () => {
+    if (isInCart) {
+      increment();
+    } else {
+      add(1);
+    }
   };
 
   if (viewMode === "list") {
@@ -41,9 +52,13 @@ export default function ProductCard({
               />
               <Badge
                 variant="secondary"
-                className="absolute top-3 left-3 bg-emerald-500/90 text-white border-0"
+                className={`absolute top-3 left-3 border-0 ${
+                  isInCart
+                    ? "bg-primary/90 text-white"
+                    : "bg-emerald-500/90 text-white"
+                }`}
               >
-                Tersedia
+                {isInCart ? `Dalam Keranjang (${quantity})` : "Tersedia"}
               </Badge>
             </div>
 
@@ -68,10 +83,42 @@ export default function ProductCard({
                   <Eye className="h-4 w-4 mr-2" />
                   Detail
                 </Button>
-                <Button size="sm">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Tambah ke Keranjang
-                </Button>
+                {isInCart ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={decrement}
+                      disabled={isLoading}
+                    >
+                      -
+                    </Button>
+                    <span className="text-sm font-medium px-3 py-2 bg-muted rounded">
+                      {quantity}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={increment}
+                      disabled={isLoading}
+                    >
+                      +
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={handleAddToCart}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                    )}
+                    Tambah ke Keranjang
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -101,9 +148,13 @@ export default function ProductCard({
           {/* Stock Badge */}
           <Badge
             variant="secondary"
-            className="absolute top-3 left-3 bg-emerald-500/90 text-white border-0 backdrop-blur-sm"
+            className={`absolute top-3 left-3 border-0 backdrop-blur-sm ${
+              isInCart
+                ? "bg-primary/90 text-white"
+                : "bg-emerald-500/90 text-white"
+            }`}
           >
-            Tersedia
+            {isInCart ? `Keranjang (${quantity})` : "Tersedia"}
           </Badge>
 
           {/* Hover Action Buttons */}
@@ -124,9 +175,15 @@ export default function ProductCard({
             <Button
               size="sm"
               className="bg-primary/90 hover:bg-primary text-white shadow-lg"
+              onClick={handleAddToCart}
+              disabled={isLoading}
             >
-              <ShoppingCart className="h-4 w-4 mr-1" />
-              Beli
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-4 w-4 mr-1" />
+              )}
+              {isInCart ? `+1 (${quantity})` : "Beli"}
             </Button>
           </div>
         </div>
@@ -147,16 +204,42 @@ export default function ProductCard({
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
             <div className="flex items-center text-xs text-slate-500">
               <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></div>
-              Tersedia
+              {isInCart ? `Dalam keranjang: ${quantity}` : "Tersedia"}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleViewDetails}
-              className="text-primary hover:text-primary hover:bg-primary/10 p-2"
-            >
-              Detail <ArrowRight className="h-3 w-3" />
-            </Button>
+            {isInCart ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={decrement}
+                  disabled={isLoading}
+                  className="h-8 w-8 p-0"
+                >
+                  -
+                </Button>
+                <span className="text-sm font-medium w-8 text-center">
+                  {quantity}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={increment}
+                  disabled={isLoading}
+                  className="h-8 w-8 p-0"
+                >
+                  +
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleViewDetails}
+                className="text-primary hover:text-primary hover:bg-primary/10 p-2"
+              >
+                Detail <ArrowRight className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

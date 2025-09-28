@@ -27,7 +27,7 @@ let privateRoutes = [
             Component: OrderPage,
           },
           {
-            path: "details",
+            path: ":orderId/details",
             Component: OrderDetailsPage,
           },
         ],

@@ -26,15 +26,21 @@ class UserAddressController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $defaultType = $request->get('default', null);
         $perPage = (int) $request->get('per_page', 15);
         $currentPage = (int) $request->get('page', 1);
-        $userId = $request->get('user_id');
+        $userId = $request->user->role === 'admin' ? $request->get('user_id') : $request->user->id;
 
         $query = UserAddress::with(['user']);
 
         // Filter by user if provided
         if ($userId) {
             $query->where('user_id', $userId);
+        }
+
+        // Filter by default type if provided
+        if ($defaultType !== null) {
+            $query->where('is_default', (bool) $defaultType);
         }
 
         // Order by default first, then by created date
@@ -56,6 +62,21 @@ class UserAddressController extends Controller
 
         try {
             DB::beginTransaction();
+
+            $user = $request->user();
+            if (!$user) {
+                DB::rollBack();
+                return $this->errorResponse(
+                    'User not authenticated.',
+                    Response::HTTP_UNAUTHORIZED
+                );
+            }
+
+            // Check if user has roles relation and contains 'user' role
+            if ($user->roles && $user->roles->contains('name', 'user')) {
+                // force normal users to only use their own ID
+                $validated['user_id'] = $user->id;
+            }
 
             // If this is set as default, unset other default addresses for this user
             if (isset($validated['is_default']) && $validated['is_default']) {
@@ -153,107 +174,5 @@ class UserAddressController extends Controller
             null,
             'User address deleted successfully.'
         );
-    }
-
-    /**
-     * Get addresses for the authenticated user.
-     */
-    public function getUserAddresses(Request $request): JsonResponse
-    {
-        $user = Auth::user();
-
-        if (!$user) {
-            return $this->errorResponse(
-                'Unauthenticated - No user found',
-                Response::HTTP_UNAUTHORIZED
-            );
-        }
-
-        $addresses = UserAddress::where('user_id', $user->id)
-            ->orderByDesc('is_default')
-            ->orderByDesc('created_at')
-            ->get();
-
-        return $this->successResponse(
-            UserAddressResource::collection($addresses),
-            'User addresses retrieved successfully.'
-        );
-    }
-
-    /**
-     * Get the authenticated user's default address.
-     */
-    public function getUserDefaultAddress(Request $request): JsonResponse
-    {
-        $user = Auth::user();
-
-        if (!$user) {
-            return $this->errorResponse(
-                'Unauthenticated - No user found',
-                Response::HTTP_UNAUTHORIZED
-            );
-        }
-
-        $address = UserAddress::where('user_id', $user->id)
-            ->where('is_default', true)
-            ->first();
-
-        if (!$address) {
-            return $this->errorResponse(
-                'No default address found for this user.',
-                Response::HTTP_NOT_FOUND
-            );
-        }
-
-        return $this->successResponse(
-            new UserAddressResource($address),
-            'Default address retrieved successfully.'
-        );
-    }
-
-    /**
-     * Set an address as default for the authenticated user.
-     */
-    public function setAsDefault(Request $request, UserAddress $userAddress): JsonResponse
-    {
-        $user = Auth::user();
-
-        if (!$user) {
-            return $this->errorResponse(
-                'Unauthenticated - No user found',
-                Response::HTTP_UNAUTHORIZED
-            );
-        }
-
-        if ($userAddress->user_id !== $user->id) {
-            return $this->errorResponse(
-                'Forbidden - This address does not belong to you.',
-                Response::HTTP_FORBIDDEN
-            );
-        }
-
-        try {
-            DB::transaction(function () use ($user, $userAddress) {
-                // Unset other default addresses
-                UserAddress::where('user_id', $user->id)
-                    ->where('id', '!=', $userAddress->id)
-                    ->update(['is_default' => false]);
-
-                // Set this one as default
-                $userAddress->update(['is_default' => true]);
-            });
-
-            $userAddress->refresh();
-
-            return $this->successResponse(
-                new UserAddressResource($userAddress),
-                'Address set as default successfully.'
-            );
-        } catch (\Throwable $e) {
-            return $this->errorResponse(
-                'Failed to set address as default: ' . $e->getMessage(),
-                Response::HTTP_INTERNAL_SERVER_ERROR
-            );
-        }
     }
 }

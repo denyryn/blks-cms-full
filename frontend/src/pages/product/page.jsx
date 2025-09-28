@@ -11,12 +11,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Search, Filter, Grid3X3, List, Package, Star } from "lucide-react";
-import { useProducts } from "@/hooks/use-products";
-import { useCategories } from "@/hooks/use-categories";
+import { Badge } from "@/components/ui/badge";
+import {
+  Search,
+  Filter,
+  Grid3X3,
+  List,
+  Package,
+  Star,
+  ShoppingCart,
+  X,
+} from "lucide-react";
+import { useProducts } from "@/hooks/queries/products.query";
+import { useCart } from "@/contexts/cart.context";
 import ProductCard from "@/components/user-side-components/product-card";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/utils";
+import { useCategories } from "@/hooks/queries/category.query";
 
 export default function ProductPage() {
   const navigate = useNavigate();
@@ -26,16 +37,16 @@ export default function ProductPage() {
   const [viewMode, setViewMode] = useState("grid"); // grid or list
   const [isHoveredCard, setIsHoveredCard] = useState(null);
 
+  // Cart state
+  const { totalItems, totalPrice, isEmpty } = useCart();
+
   // Use real API hooks with dynamic parameters
   const {
     data: products,
-    loading: productsLoading,
+    isLoading: productsLoading,
     error: productsError,
   } = useProducts(0, 50, sortBy, selectedCategory);
-  const { data: categoriesData, loading: categoriesLoading } = useCategories(
-    0,
-    20
-  );
+  const { data: categoriesData } = useCategories(0, 20);
 
   // Build categories array from API data
   const categories = [
@@ -222,6 +233,43 @@ export default function ProductPage() {
               : renderEmpty}
           </div>
         </>
+      )}
+
+      {/* Floating Cart Summary */}
+      {!isEmpty && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Card className="shadow-lg border-0 bg-primary text-primary-foreground">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <ShoppingCart className="h-6 w-6" />
+                  <Badge
+                    variant="secondary"
+                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-orange-500 text-white"
+                  >
+                    {totalItems}
+                  </Badge>
+                </div>
+                <div className="flex flex-col">
+                  <div className="text-sm font-medium">
+                    {totalItems} item{totalItems > 1 ? "s" : ""}
+                  </div>
+                  <div className="text-lg font-bold">
+                    {formatPrice(totalPrice)}
+                  </div>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigate("/cart")}
+                  className="ml-2"
+                >
+                  Lihat Keranjang
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

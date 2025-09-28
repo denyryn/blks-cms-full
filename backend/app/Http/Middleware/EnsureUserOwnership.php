@@ -76,6 +76,8 @@ class EnsureUserOwnership
             }
         }
 
+        $request->merge(['user' => $user]);
+
         return $next($request);
     }
 }

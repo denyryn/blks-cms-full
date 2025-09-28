@@ -1,9 +1,11 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { formatPrice } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Minus,
   Plus,
@@ -15,57 +17,50 @@ import {
   Shield,
   Tag,
   X,
+  Loader2,
 } from "lucide-react";
 import { Link } from "react-router";
+import { useCart } from "@/contexts/cart.context";
+import { useAuth } from "@/contexts/auth.context";
+import { useUserAddresses } from "@/hooks/queries/user-addresses.query";
+import { useCreateOrder } from "@/hooks/queries/orders.query";
+import { useUserDefaultAddress } from "@/hooks/queries/user-addresses.query";
+import { AddressSelector } from "@/components/cart/address-selector";
+import config from "@/lib/config";
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Arduino Uno R3 Original",
-      price: 125000,
-      quantity: 2,
-      image: "/src/assets/arduino-parts.jpg",
-      category: "Microcontroller",
-      stock: 15,
-      description: "Arduino Uno R3 original dengan USB cable",
-    },
-    {
-      id: 2,
-      name: "Sensor Ultrasonik HC-SR04",
-      price: 25000,
-      quantity: 1,
-      image: "/src/assets/arduino-parts.jpg",
-      category: "Sensor",
-      stock: 50,
-      description: "Sensor jarak ultrasonik untuk project robotika",
-    },
-    {
-      id: 3,
-      name: "Breadboard 830 Lubang",
-      price: 15000,
-      quantity: 3,
-      image: "/src/assets/arduino-parts.jpg",
-      category: "Prototyping",
-      stock: 25,
-      description: "Breadboard berkualitas tinggi untuk prototyping",
-    },
-  ]);
+  const {
+    cartItems,
+    loading,
+    error,
+    isEmpty,
+    removeFromCart,
+    clearCart,
+    incrementQuantity,
+    decrementQuantity,
+    isUpdatingCart,
+    isRemovingFromCart,
+    isClearingCart,
+    clearError,
+  } = useCart();
+  const { user } = useAuth();
+  const { data: defaultAddress, isLoading: isLoadingDefaultAddress } =
+    useUserDefaultAddress();
+  const createOrder = useCreateOrder();
 
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState(null);
+  const [selectedAddress, setSelectedAddress] = useState(null);
 
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity < 1) return;
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
+  // Set default address as selected when it loads
+  React.useEffect(() => {
+    if (defaultAddress && !selectedAddress) {
+      setSelectedAddress(defaultAddress);
+    }
+  }, [defaultAddress, selectedAddress]);
 
-  const removeItem = (id) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
+  const handleRemoveItem = (cartId) => {
+    removeFromCart(cartId);
   };
 
   const applyPromoCode = () => {
@@ -88,22 +83,39 @@ export default function CartPage() {
   };
 
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + (item.product?.price || 0) * item.quantity,
     0
   );
   const discount = appliedPromo ? subtotal * appliedPromo.discount : 0;
   const shipping = subtotal > 500000 ? 0 : 15000; // Free shipping over 500k
   const total = subtotal - discount + shipping;
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  function handleCheckout() {
+    if (!selectedAddress) {
+      alert("Silakan pilih alamat pengiriman terlebih dahulu");
+      return;
+    }
 
-  if (cartItems.length === 0) {
+    createOrder.mutateAsync({
+      user_id: user.id,
+      user_address_id: selectedAddress.id,
+      cart_ids: cartItems.map((item) => item.id),
+    });
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-6 py-8">
+        <div className="text-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Memuat keranjang...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isEmpty) {
     return (
       <div className="container mx-auto px-6 py-8">
         <div className="text-center py-16">
@@ -128,6 +140,18 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-6 py-8">
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button variant="ghost" size="sm" onClick={clearError}>
+              <X className="h-4 w-4" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -157,12 +181,11 @@ export default function CartPage() {
                   <div className="flex-shrink-0">
                     <div className="w-24 h-24 bg-muted rounded-lg overflow-hidden">
                       <img
-                        src={item.image}
-                        alt={item.name}
+                        src={item.product?.image_url || config.imageFallback}
+                        alt={item.product?.name || "Product"}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.target.src =
-                            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0xMiA4VjEyTDE2IDE2IiBzdHJva2U9IiM5Y2EzYWYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=";
+                          e.target.src = config.imageFallback;
                         }}
                       />
                     </div>
@@ -173,29 +196,35 @@ export default function CartPage() {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="font-semibold text-foreground text-lg mb-1">
-                          {item.name}
+                          {item.product?.name || "Product"}
                         </h3>
                         <Badge variant="secondary" className="text-xs mb-2">
-                          {item.category}
+                          {item.product?.category?.name || "Category"}
                         </Badge>
                         <p className="text-sm text-muted-foreground">
-                          {item.description}
+                          {item.product?.description ||
+                            "No description available"}
                         </p>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => handleRemoveItem(item.id)}
+                        disabled={isRemovingFromCart(item.id)}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {isRemovingFromCart(item.id) ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
 
                     {/* Price and Quantity Controls */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4">
                       <div className="text-lg font-bold text-primary">
-                        {formatCurrency(item.price)}
+                        {formatPrice(item.product?.price || 0)}
                       </div>
 
                       <div className="flex items-center gap-4">
@@ -204,12 +233,16 @@ export default function CartPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
+                            onClick={() => decrementQuantity(item.id)}
+                            disabled={
+                              item.quantity <= 1 || isUpdatingCart(item.id)
                             }
-                            disabled={item.quantity <= 1}
                           >
-                            <Minus className="h-4 w-4" />
+                            {isUpdatingCart(item.id) ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Minus className="h-4 w-4" />
+                            )}
                           </Button>
                           <span className="w-12 text-center font-medium">
                             {item.quantity}
@@ -217,22 +250,26 @@ export default function CartPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
-                            }
-                            disabled={item.quantity >= item.stock}
+                            onClick={() => incrementQuantity(item.id)}
+                            disabled={isUpdatingCart(item.id)}
                           >
-                            <Plus className="h-4 w-4" />
+                            {isUpdatingCart(item.id) ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
 
                         {/* Subtotal for this item */}
                         <div className="text-right">
                           <div className="font-semibold text-foreground">
-                            {formatCurrency(item.price * item.quantity)}
+                            {formatPrice(
+                              (item.product?.price || 0) * item.quantity
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            Stok: {item.stock}
+                            Stok: {item.product?.stock || 0}
                           </div>
                         </div>
                       </div>
@@ -247,6 +284,12 @@ export default function CartPage() {
         {/* Order Summary */}
         <div className="lg:col-span-1">
           <div className="sticky top-6 space-y-6">
+            {/* Address Selection */}
+            <AddressSelector
+              selectedAddressId={selectedAddress?.id}
+              onAddressSelect={setSelectedAddress}
+            />
+
             {/* Promo Code */}
             <Card>
               <CardHeader>
@@ -305,15 +348,13 @@ export default function CartPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">
-                    {formatCurrency(subtotal)}
-                  </span>
+                  <span className="font-medium">{formatPrice(subtotal)}</span>
                 </div>
 
                 {appliedPromo && (
                   <div className="flex justify-between text-green-600">
                     <span>Diskon ({appliedPromo.code})</span>
-                    <span>-{formatCurrency(discount)}</span>
+                    <span>-{formatPrice(discount)}</span>
                   </div>
                 )}
 
@@ -323,7 +364,7 @@ export default function CartPage() {
                     {shipping === 0 ? (
                       <Badge variant="secondary">GRATIS</Badge>
                     ) : (
-                      formatCurrency(shipping)
+                      formatPrice(shipping)
                     )}
                   </span>
                 </div>
@@ -332,7 +373,7 @@ export default function CartPage() {
 
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-primary">{formatCurrency(total)}</span>
+                  <span className="text-primary">{formatPrice(total)}</span>
                 </div>
 
                 {subtotal < 500000 && (
@@ -343,7 +384,7 @@ export default function CartPage() {
                         Gratis Ongkir
                       </span>
                     </div>
-                    Belanja {formatCurrency(500000 - subtotal)} lagi untuk
+                    Belanja {formatPrice(500000 - subtotal)} lagi untuk
                     mendapatkan gratis ongkir!
                   </div>
                 )}
@@ -351,9 +392,44 @@ export default function CartPage() {
             </Card>
 
             {/* Checkout Button */}
-            <Button size="lg" className="w-full">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Checkout
+            <Button
+              size="lg"
+              className="w-full"
+              disabled={isEmpty || !selectedAddress || createOrder.isPending}
+              onClick={handleCheckout}
+            >
+              {createOrder.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  {!selectedAddress ? "Pilih Alamat Dulu" : "Checkout"}
+                </>
+              )}
+            </Button>
+
+            {/* Clear Cart Button */}
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={clearCart}
+              disabled={isEmpty || isClearingCart}
+            >
+              {isClearingCart ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Kosongkan Keranjang
+                </>
+              )}
             </Button>
 
             {/* Security Notice */}

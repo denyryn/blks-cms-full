@@ -1,9 +1,8 @@
 import { Edit, Trash } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { CategoryModal } from "@/components/category/data-category-modal";
-import { CategoryAlert } from "@/components/category/data-category-alert";
 import { useNavigate } from "react-router";
+import { ProductAlert } from "@/components/product/data-product-alert";
 
 export const columns = (onDataChange) => [
   {
@@ -42,8 +41,8 @@ export const columns = (onDataChange) => [
             <Edit className="size-4" />
           </Button>
 
-          <CategoryAlert
-            category={formData}
+          <ProductAlert
+            product={formData}
             trigger={deleteTrigger()}
             onConfirm={onDataChange}
             onSuccess={onDataChange}

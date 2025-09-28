@@ -20,6 +20,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useProduct } from "@/hooks/use-products";
+import { useCart } from "@/contexts/cart.context";
+import config from "@/lib/config";
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
@@ -29,15 +31,7 @@ export default function ProductDetailsPage() {
   const [isFavorite, setIsFavorite] = useState(false);
 
   const { data: product, loading, error } = useProduct(id);
-
-  // Mock additional images for demo (in real app, this would come from API)
-  console.log(product);
-  const productImages = [product?.image_url] || [
-    "/src/assets/arduino-parts.jpg",
-    "/src/assets/techy-graphic.png",
-    "/src/assets/service-illustration.jpg",
-    "/src/assets/arduino-parts.jpg",
-  ];
+  const { addToCart } = useCart();
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("id-ID", {
@@ -52,9 +46,10 @@ export default function ProductDetailsPage() {
   };
 
   const handleAddToCart = () => {
-    // Add to cart logic here
-    console.log(`Added ${quantity} of product ${product.id} to cart`);
+    addToCart(product.id, quantity);
   };
+
+  const productImages = [product?.image_url || config.imageFallback];
 
   if (loading) {
     return (

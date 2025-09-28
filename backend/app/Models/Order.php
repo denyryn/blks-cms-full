@@ -17,7 +17,7 @@ class Order extends Model
      */
     protected $fillable = [
         'user_id',
-        'shipping_address_id',
+        'user_address_id',
         'total_price',
         'payment_proof',
         'status',
@@ -30,7 +30,7 @@ class Order extends Model
 
     public function shippingAddress()
     {
-        return $this->belongsTo(UserAddress::class, 'shipping_address_id');
+        return $this->belongsTo(UserAddress::class);
     }
 
     public function orderDetails()

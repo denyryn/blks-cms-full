@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useOrder } from "@/hooks/queries/orders.query";
+import { formatDate, formatPrice } from "@/lib/utils";
 import {
   Package,
   Clock,
@@ -25,219 +27,23 @@ import {
   Calendar,
   User,
 } from "lucide-react";
+import { PaymentModal } from "@/components/order/payment-modal";
 
 export default function OrderDetailsPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  // Sample order data (in real app, this would be fetched based on orderId)
-  const sampleOrders = {
-    "ORD-2024-001": {
-      id: "ORD-2024-001",
-      date: "2024-09-20",
-      status: "delivered",
-      total: 387000,
-      deliveredDate: "2024-09-25",
-      items: [
-        {
-          id: 1,
-          name: "Arduino Uno R3 Original",
-          quantity: 2,
-          price: 125000,
-          image: "/src/assets/arduino-parts.jpg",
-          category: "Microcontroller",
-          sku: "ARD-UNO-R3",
-          description:
-            "Arduino Uno R3 original dengan USB cable dan dokumentasi lengkap",
-        },
-        {
-          id: 2,
-          name: "Sensor Ultrasonik HC-SR04",
-          quantity: 1,
-          price: 25000,
-          image: "/src/assets/arduino-parts.jpg",
-          category: "Sensor",
-          sku: "SNS-US-HC04",
-          description:
-            "Sensor jarak ultrasonik dengan akurasi tinggi untuk project robotika",
-        },
-        {
-          id: 9,
-          name: "Kabel USB A to B",
-          quantity: 2,
-          price: 12000,
-          image: "/src/assets/arduino-parts.jpg",
-          category: "Cable",
-          sku: "CBL-USB-AB",
-          description: "Kabel USB berkualitas tinggi untuk koneksi Arduino",
-        },
-      ],
-      shipping: {
-        address:
-          "Jl. Sudirman No. 123, Blok A No. 5, RT 02/RW 05, Menteng, Jakarta Pusat 10270",
-        recipient: "Ahmad Pratama",
-        phone: "+62 812-3456-7890",
-        method: "JNE Reguler",
-        cost: 12000,
-        trackingNumber: "JNE1234567890",
-        estimatedDelivery: "2024-09-22",
-        actualDelivery: "2024-09-25",
-        courier: "Budi Santoso",
-      },
-      payment: {
-        method: "Transfer Bank BCA",
-        status: "paid",
-        accountNumber: "1234567890",
-        accountName: "PT. ProTech Indonesia",
-        paidAt: "2024-09-20T14:30:00Z",
-        amount: 387000,
-      },
-      timeline: [
-        {
-          status: "ordered",
-          title: "Pesanan Dibuat",
-          description: "Pesanan berhasil dibuat dan menunggu pembayaran",
-          timestamp: "2024-09-20T10:00:00Z",
-          completed: true,
-        },
-        {
-          status: "paid",
-          title: "Pembayaran Diterima",
-          description: "Pembayaran telah dikonfirmasi dan diverifikasi",
-          timestamp: "2024-09-20T14:30:00Z",
-          completed: true,
-        },
-        {
-          status: "processing",
-          title: "Pesanan Diproses",
-          description: "Pesanan sedang disiapkan dan dikemas",
-          timestamp: "2024-09-21T09:00:00Z",
-          completed: true,
-        },
-        {
-          status: "shipped",
-          title: "Pesanan Dikirim",
-          description: "Pesanan telah dikirim melalui JNE Reguler",
-          timestamp: "2024-09-22T16:00:00Z",
-          completed: true,
-        },
-        {
-          status: "delivered",
-          title: "Pesanan Diterima",
-          description: "Pesanan telah diterima oleh penerima",
-          timestamp: "2024-09-25T11:30:00Z",
-          completed: true,
-        },
-      ],
-      notes: "Pesanan khusus untuk project sekolah. Mohon dikemas dengan baik.",
-      invoice: {
-        number: "INV-2024-001",
-        downloadUrl: "/api/invoices/INV-2024-001.pdf",
-      },
-    },
-    "ORD-2024-002": {
-      id: "ORD-2024-002",
-      date: "2024-09-18",
-      status: "shipping",
-      total: 167000,
-      items: [
-        {
-          id: 3,
-          name: "Breadboard 830 Lubang",
-          quantity: 3,
-          price: 15000,
-          image: "/src/assets/arduino-parts.jpg",
-          category: "Prototyping",
-          sku: "BRD-830",
-          description: "Breadboard berkualitas tinggi dengan 830 tie points",
-        },
-        {
-          id: 4,
-          name: "Jumper Wire Male-Female",
-          quantity: 2,
-          price: 12000,
-          image: "/src/assets/arduino-parts.jpg",
-          category: "Wire",
-          sku: "JMP-MF-40",
-          description: "Set 40 pcs jumper wire male-female berkualitas",
-        },
-      ],
-      shipping: {
-        address:
-          "Jl. Gatot Subroto No. 456, Apartment Green Bay Tower A Lt. 15, Jakarta Selatan 12920",
-        recipient: "Sari Wulandari",
-        phone: "+62 821-9876-5432",
-        method: "JNT Express",
-        cost: 15000,
-        trackingNumber: "JNT9876543210",
-        estimatedDelivery: "2024-09-21",
-      },
-      payment: {
-        method: "QRIS",
-        status: "paid",
-        paidAt: "2024-09-18T16:45:00Z",
-        amount: 167000,
-      },
-      timeline: [
-        {
-          status: "ordered",
-          title: "Pesanan Dibuat",
-          description: "Pesanan berhasil dibuat dan menunggu pembayaran",
-          timestamp: "2024-09-18T15:00:00Z",
-          completed: true,
-        },
-        {
-          status: "paid",
-          title: "Pembayaran Diterima",
-          description: "Pembayaran via QRIS berhasil dikonfirmasi",
-          timestamp: "2024-09-18T16:45:00Z",
-          completed: true,
-        },
-        {
-          status: "processing",
-          title: "Pesanan Diproses",
-          description: "Pesanan sedang disiapkan dan dikemas",
-          timestamp: "2024-09-19T08:30:00Z",
-          completed: true,
-        },
-        {
-          status: "shipped",
-          title: "Pesanan Dikirim",
-          description: "Pesanan telah dikirim melalui JNT Express",
-          timestamp: "2024-09-20T14:00:00Z",
-          completed: true,
-        },
-        {
-          status: "delivered",
-          title: "Pesanan Diterima",
-          description: "Pesanan dalam perjalanan ke alamat tujuan",
-          timestamp: null,
-          completed: false,
-        },
-      ],
-      notes: null,
-      invoice: {
-        number: "INV-2024-002",
-        downloadUrl: "/api/invoices/INV-2024-002.pdf",
-      },
-    },
-  };
-
-  useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
-      const foundOrder = sampleOrders[orderId];
-      setOrder(foundOrder || null);
-      setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [orderId]);
+  const { data: order, isLoading, error } = useOrder(orderId);
 
   const getStatusInfo = (status) => {
     const statusMap = {
+      pending: {
+        label: "Menunggu",
+        variant: "secondary",
+        icon: Clock,
+        color: "text-orange-600",
+        bgColor: "bg-orange-50",
+      },
       processing: {
         label: "Diproses",
         variant: "secondary",
@@ -245,7 +51,7 @@ export default function OrderDetailsPage() {
         color: "text-orange-600",
         bgColor: "bg-orange-50",
       },
-      shipping: {
+      shipped: {
         label: "Dikirim",
         variant: "default",
         icon: Truck,
@@ -267,7 +73,7 @@ export default function OrderDetailsPage() {
         bgColor: "bg-red-50",
       },
     };
-    return statusMap[status] || statusMap.processing;
+    return statusMap[status] || statusMap.pending;
   };
 
   const formatCurrency = (amount) => {
@@ -303,17 +109,54 @@ export default function OrderDetailsPage() {
 
   const handleTrackPackage = () => {
     // In a real app, this would redirect to the courier's tracking page
-    window.open(
-      `https://www.jne.co.id/id/tracking/trace/${order.shipping.trackingNumber}`,
-      "_blank"
-    );
+    const trackingNumber = order?.shipping?.trackingNumber;
+    if (trackingNumber) {
+      window.open(
+        `https://www.jne.co.id/id/tracking/trace/${trackingNumber}`,
+        "_blank"
+      );
+    }
   };
 
-  if (loading) {
+  const paymentModalTrigger = () => (
+    <Button variant="outline" className="w-full justify-start">
+      <CreditCard className="h-4 w-4 mr-2" />
+      Bayar Sekarang
+    </Button>
+  );
+
+  if (isLoading) {
     return (
       <div className="container mx-auto px-6 py-8">
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-6 py-8">
+        <div className="text-center py-16">
+          <AlertCircle className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
+          <h1 className="text-3xl font-bold text-foreground mb-4">
+            Gagal Memuat Pesanan
+          </h1>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            {error.message ||
+              "Terjadi kesalahan saat memuat detail pesanan. Silakan coba lagi."}
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Button onClick={() => window.location.reload()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Coba Lagi
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/orders")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Kembali ke Pesanan
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -340,10 +183,10 @@ export default function OrderDetailsPage() {
     );
   }
 
-  const statusInfo = getStatusInfo(order.status);
+  const statusInfo = getStatusInfo(order?.status);
   const StatusIcon = statusInfo.icon;
-  const subtotal = order.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+  const subtotal = (order?.order_details || []).reduce(
+    (sum, detail) => sum + detail.price * detail.quantity,
     0
   );
 
@@ -362,7 +205,7 @@ export default function OrderDetailsPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              {order.id}
+              Order #{order?.id}
             </h1>
             <Badge
               variant={statusInfo.variant}
@@ -373,7 +216,7 @@ export default function OrderDetailsPage() {
             </Badge>
           </div>
           <p className="text-muted-foreground">
-            Dipesan pada {formatDate(order.date)}
+            Dipesan pada {formatDate(order?.created_at)}
           </p>
         </div>
       </div>
@@ -382,62 +225,64 @@ export default function OrderDetailsPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
           {/* Order Status Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Status Pesanan</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {order.timeline.map((step, index) => (
-                  <div key={step.status} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          step.completed
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {step.completed ? (
-                          <CheckCircle className="h-5 w-5" />
-                        ) : (
-                          <Clock className="h-5 w-5" />
-                        )}
-                      </div>
-                      {index < order.timeline.length - 1 && (
+          {order?.timeline && order.timeline.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Status Pesanan</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {order.timeline.map((step, index) => (
+                    <div key={step.status} className="flex gap-4">
+                      <div className="flex flex-col items-center">
                         <div
-                          className={`w-0.5 h-8 mt-2 ${
-                            step.completed ? "bg-primary" : "bg-muted"
-                          }`}
-                        />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-8">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3
-                          className={`font-medium ${
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
                             step.completed
-                              ? "text-foreground"
-                              : "text-muted-foreground"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
                           }`}
                         >
-                          {step.title}
-                        </h3>
-                        {step.timestamp && (
-                          <span className="text-sm text-muted-foreground">
-                            {formatDateTime(step.timestamp)}
-                          </span>
+                          {step.completed ? (
+                            <CheckCircle className="h-5 w-5" />
+                          ) : (
+                            <Clock className="h-5 w-5" />
+                          )}
+                        </div>
+                        {index < order.timeline.length - 1 && (
+                          <div
+                            className={`w-0.5 h-8 mt-2 ${
+                              step.completed ? "bg-primary" : "bg-muted"
+                            }`}
+                          />
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {step.description}
-                      </p>
+                      <div className="flex-1 pb-8">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3
+                            className={`font-medium ${
+                              step.completed
+                                ? "text-foreground"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {step.title}
+                          </h3>
+                          {step.timestamp && (
+                            <span className="text-sm text-muted-foreground">
+                              {formatDateTime(step.timestamp)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {step.description}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Order Items */}
           <Card>
@@ -446,45 +291,55 @@ export default function OrderDetailsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {order.items.map((item) => (
+                {(order?.order_details || []).map((detail) => (
                   <div
-                    key={item.id}
+                    key={detail.id}
                     className="flex items-center gap-4 p-4 border rounded-lg"
                   >
                     <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                       <img
-                        src={item.image}
-                        alt={item.name}
+                        src={
+                          detail.product?.image_url ||
+                          "/src/assets/placeholder.svg"
+                        }
+                        alt={detail.product?.name || "Product"}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.target.src =
-                            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0xMiA4VjEyTDE2IDE2IiBzdHJva2U9IiM5Y2EzYWYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=";
+                          e.target.src = "/src/assets/placeholder.svg";
                         }}
                       />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-lg mb-2">{item.name}</h4>
+                      <h4 className="font-medium text-lg mb-2">
+                        {detail.product?.name || "Unknown Product"}
+                      </h4>
                       <div className="flex items-center gap-4 mb-2">
-                        <Badge variant="secondary">{item.category}</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          SKU: {item.sku}
-                        </span>
+                        <Badge variant="secondary">
+                          {detail.product?.category?.name || "Kategori"}
+                        </Badge>
+                        {detail.product?.sku && (
+                          <span className="text-sm text-muted-foreground">
+                            SKU: {detail.product.sku}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {item.description}
-                      </p>
+                      {detail.product?.description && (
+                        <p className="text-sm text-muted-foreground mb-3">
+                          {detail.product.description}
+                        </p>
+                      )}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <span className="text-sm text-muted-foreground">
-                            Qty: {item.quantity}
+                            Qty: {detail.quantity}
                           </span>
                           <span className="font-medium">
-                            {formatCurrency(item.price)} / pcs
+                            {formatCurrency(detail.price)} / pcs
                           </span>
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-lg">
-                            {formatCurrency(item.price * item.quantity)}
+                            {formatCurrency(detail.price * detail.quantity)}
                           </div>
                         </div>
                       </div>
@@ -496,7 +351,7 @@ export default function OrderDetailsPage() {
           </Card>
 
           {/* Order Notes */}
-          {order.notes && (
+          {order?.notes && (
             <Card>
               <CardHeader>
                 <CardTitle>Catatan Pesanan</CardTitle>
@@ -516,11 +371,20 @@ export default function OrderDetailsPage() {
               <CardTitle>Aksi Cepat</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {order?.id &&
+                !order?.payment_proof &&
+                order.status !== "cancelled" && (
+                  <PaymentModal
+                    triggerElement={paymentModalTrigger()}
+                    initial={{ id: order.id }}
+                    onSuccess={() => window.location.reload()}
+                  />
+                )}
               <Button variant="outline" className="w-full justify-start">
                 <Download className="h-4 w-4 mr-2" />
                 Download Invoice
               </Button>
-              {order.shipping.trackingNumber && (
+              {order?.shipping?.trackingNumber && (
                 <Button
                   variant="outline"
                   className="w-full justify-start"
@@ -534,7 +398,7 @@ export default function OrderDetailsPage() {
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Hubungi Penjual
               </Button>
-              {order.status === "delivered" && (
+              {order?.status === "delivered" && (
                 <>
                   <Button className="w-full justify-start">
                     <RefreshCw className="h-4 w-4 mr-2" />
@@ -563,22 +427,40 @@ export default function OrderDetailsPage() {
                   ALAMAT PENGIRIMAN
                 </h4>
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="font-medium">
-                      {order.shipping.recipient}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm">{order.shipping.phone}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <span className="text-sm leading-relaxed">
-                      {order.shipping.address}
-                    </span>
-                  </div>
+                  {order?.user_address ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium">
+                          {order.user_address.recipient_name || "Nama Penerima"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm">
+                          {order.user_address.phone ||
+                            "Nomor telepon tidak tersedia"}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <span className="text-sm leading-relaxed">
+                          {[
+                            order.user_address.address,
+                            order.user_address.city,
+                            order.user_address.province,
+                            order.user_address.postal_code,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Alamat pengiriman tidak tersedia
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -592,16 +474,16 @@ export default function OrderDetailsPage() {
                   <div className="flex justify-between">
                     <span className="text-sm">Kurir</span>
                     <span className="text-sm font-medium">
-                      {order.shipping.method}
+                      {order?.shipping?.method || "Belum ditentukan"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm">Ongkos Kirim</span>
                     <span className="text-sm font-medium">
-                      {formatCurrency(order.shipping.cost)}
+                      {formatCurrency(order?.shipping?.cost || 0)}
                     </span>
                   </div>
-                  {order.shipping.trackingNumber && (
+                  {order?.shipping?.trackingNumber && (
                     <div className="flex justify-between items-center">
                       <span className="text-sm">No. Resi</span>
                       <div className="flex items-center gap-2">
@@ -621,7 +503,7 @@ export default function OrderDetailsPage() {
                       </div>
                     </div>
                   )}
-                  {order.shipping.estimatedDelivery && (
+                  {order?.shipping?.estimatedDelivery && (
                     <div className="flex justify-between">
                       <span className="text-sm">Est. Tiba</span>
                       <span className="text-sm">
@@ -629,7 +511,7 @@ export default function OrderDetailsPage() {
                       </span>
                     </div>
                   )}
-                  {order.shipping.actualDelivery && (
+                  {order?.shipping?.actualDelivery && (
                     <div className="flex justify-between">
                       <span className="text-sm">Diterima</span>
                       <span className="text-sm font-medium text-green-600">
@@ -659,27 +541,25 @@ export default function OrderDetailsPage() {
                   <div className="flex justify-between">
                     <span className="text-sm">Metode</span>
                     <span className="text-sm font-medium">
-                      {order.payment.method}
+                      {order?.payment?.method || "Transfer Bank"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Status</span>
                     <Badge
                       variant={
-                        order.payment.status === "paid"
-                          ? "secondary"
-                          : "destructive"
+                        order?.payment_proof ? "secondary" : "destructive"
                       }
                       className="text-xs"
                     >
-                      {order.payment.status === "paid" ? "Lunas" : "Refund"}
+                      {order?.payment_proof ? "Bukti Upload" : "Belum Bayar"}
                     </Badge>
                   </div>
-                  {order.payment.paidAt && (
+                  {order?.updated_at && order?.payment_proof && (
                     <div className="flex justify-between">
-                      <span className="text-sm">Dibayar</span>
+                      <span className="text-sm">Upload Bukti</span>
                       <span className="text-sm">
-                        {formatDateTime(order.payment.paidAt)}
+                        {formatDate(order.updated_at)}
                       </span>
                     </div>
                   )}
@@ -700,14 +580,17 @@ export default function OrderDetailsPage() {
                   <div className="flex justify-between">
                     <span className="text-sm">Ongkos Kirim</span>
                     <span className="text-sm">
-                      {formatCurrency(order.shipping.cost)}
+                      {formatCurrency(order?.shipping?.cost || 0)}
                     </span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-semibold">
                     <span>Total</span>
                     <span className="text-primary">
-                      {formatCurrency(order.total)}
+                      {formatCurrency(
+                        parseFloat(order?.total_price || 0) +
+                          (order?.shipping?.cost || 0)
+                      )}
                     </span>
                   </div>
                 </div>

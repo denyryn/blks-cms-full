@@ -12,8 +12,8 @@ export function getCart(id) {
   });
 }
 
-export function createCart(id, { product_id, quantity }) {
-  return Fetcher.fetch(`/api/carts/${id}`, {
+export function createCart({ product_id, quantity }) {
+  return Fetcher.fetch(`/api/carts`, {
     method: "POST",
     body: JSON.stringify({ product_id, quantity }),
   });
@@ -28,6 +28,12 @@ export function updateCart(id, { product_id, quantity }) {
 
 export function deleteCart(id) {
   return Fetcher.fetch(`/api/carts/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function clearCart() {
+  return Fetcher.fetch(`/api/carts`, {
     method: "DELETE",
   });
 }

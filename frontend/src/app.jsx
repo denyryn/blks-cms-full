@@ -1,9 +1,11 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router";
 import { ThemeProvider } from "next-themes";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "./contexts/auth.context.jsx";
-import router from "@/routes";
 import { Toaster } from "sonner";
+
+import { AuthProvider } from "./contexts/auth.context.jsx";
+import { CartProvider } from "./contexts/cart.context.jsx";
+import router from "@/routes";
 
 const queryClient = new QueryClient();
 
@@ -13,11 +15,13 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
-            <RouterProvider router={router} />
-            <Toaster position="top-right" />
+            <CartProvider>
+              <RouterProvider router={router} />
+            </CartProvider>
           </AuthProvider>
         </ThemeProvider>
         {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+        <Toaster position="top-right" />
       </QueryClientProvider>
     </>
   );
