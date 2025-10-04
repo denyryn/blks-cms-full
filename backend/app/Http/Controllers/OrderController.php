@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
+use Exception;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Http\Resources\OrderResource;
@@ -69,7 +71,7 @@ class OrderController extends Controller
             // Handle cart-based order
             if (!empty($validated['cart_ids'])) {
                 // Get cart items
-                $cartItems = \App\Models\Cart::whereIn('id', $validated['cart_ids'])
+                $cartItems = Cart::whereIn('id', $validated['cart_ids'])
                     ->where('user_id', $validated['user_id'])
                     ->with('product')
                     ->get();
@@ -134,7 +136,7 @@ class OrderController extends Controller
 
             // Remove items from cart if this was a cart-based order
             if (!empty($validated['cart_ids'])) {
-                \App\Models\Cart::whereIn('id', $validated['cart_ids'])->delete();
+                Cart::whereIn('id', $validated['cart_ids'])->delete();
             }
 
             $order->load(['user', 'shippingAddress', 'orderDetails.product.category']);
@@ -147,7 +149,7 @@ class OrderController extends Controller
                 Response::HTTP_CREATED
             );
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return $this->errorResponse(
                 'Failed to create order: ' . $e->getMessage(),

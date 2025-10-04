@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\UserAddressFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class UserAddress extends Model
 {
-    /** @use HasFactory<\Database\Factories\UserAddressFactory> */
+    /** @use HasFactory<UserAddressFactory> */
     use HasFactory;
 
     /**

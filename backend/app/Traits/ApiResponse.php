@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,7 +35,7 @@ trait ApiResponse
     /**
      * Return a paginated JSON response.
      *
-     * @param \Illuminate\Contracts\Pagination\Paginator $paginator
+     * @param Paginator $paginator
      * @param string|null $message
      * @param int $code
      * @return JsonResponse

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\UserAddressResource\Pages;
 
+use Filament\Actions\CreateAction;
 use App\Filament\Resources\UserAddressResource;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -13,7 +14,7 @@ class ListUserAddresses extends ListRecords
     protected function getActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 }

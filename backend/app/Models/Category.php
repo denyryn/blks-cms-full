@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,7 +25,7 @@ class Category extends Model
         parent::boot();
 
         static::saving(function (Category $category) {
-            $slug = \Str::slug($category->name);
+            $slug = Str::slug($category->name);
             $count = static::where('slug', 'like', "{$slug}%")
                 ->where('id', '!=', $category->id)
                 ->count();

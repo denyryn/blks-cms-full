@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Illuminate\Auth\AuthenticationException;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,20 +13,20 @@ class AuthCookie
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request):Response $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         $token = $request->cookie('auth_token');
 
         if (!$token) {
-            throw new \Illuminate\Auth\AuthenticationException('Unauthenticated - No token cookie found');
+            throw new AuthenticationException('Unauthenticated - No token cookie found');
         }
 
         $accessToken = PersonalAccessToken::findToken($token);
 
         if (!$accessToken || !$accessToken->tokenable) {
-            throw new \Illuminate\Auth\AuthenticationException('Unauthenticated - Invalid or expired token');
+            throw new AuthenticationException('Unauthenticated - Invalid or expired token');
         }
 
         // Bind user into request (so $request->user() works)

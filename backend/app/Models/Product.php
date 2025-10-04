@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Str;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,7 +31,7 @@ class Product extends Model
         parent::boot();
 
         static::saving(function (Product $product) {
-            $slug = \Str::slug($product->name);
+            $slug = Str::slug($product->name);
             $count = static::where('slug', 'like', "{$slug}%")
                 ->where('id', '!=', $product->id)
                 ->count();

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\GuestMessageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class GuestMessage extends Model
 {
-    /** @use HasFactory<\Database\Factories\GuestMessageFactory> */
+    /** @use HasFactory<GuestMessageFactory> */
     use HasFactory;
 
     /**

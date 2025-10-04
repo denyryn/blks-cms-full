@@ -2,10 +2,18 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\CartResource\Pages\ListCarts;
+use App\Filament\Resources\CartResource\Pages\CreateCart;
+use App\Filament\Resources\CartResource\Pages\EditCart;
 use App\Filament\Resources\CartResource\Pages;
 use App\Models\Cart;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -13,19 +21,19 @@ use Filament\Tables\Table;
 class CartResource extends Resource
 {
     protected static ?string $model = Cart::class;
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shopping-cart';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('user_id')
+        return $schema
+            ->components([
+                TextInput::make('user_id')
                     ->required()
                     ->numeric(),
-                Forms\Components\TextInput::make('product_id')
+                TextInput::make('product_id')
                     ->required()
                     ->numeric(),
-                Forms\Components\TextInput::make('quantity')
+                TextInput::make('quantity')
                     ->required()
                     ->numeric(),
             ]);
@@ -35,24 +43,24 @@ class CartResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')->sortable(),
-                Tables\Columns\TextColumn::make('user_id')->sortable(),
-                Tables\Columns\TextColumn::make('product_id')->sortable(),
-                Tables\Columns\TextColumn::make('quantity')->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('id')->sortable(),
+                TextColumn::make('user_id')->sortable(),
+                TextColumn::make('product_id')->sortable(),
+                TextColumn::make('quantity')->sortable(),
+                TextColumn::make('created_at')
                     ->dateTime('d M Y H:i')->sortable(),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime('d M Y H:i')->sortable(),
             ])
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -65,9 +73,9 @@ class CartResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCarts::route('/'),
-            'create' => Pages\CreateCart::route('/create'),
-            'edit' => Pages\EditCart::route('/{record}/edit'),
+            'index' => ListCarts::route('/'),
+            'create' => CreateCart::route('/create'),
+            'edit' => EditCart::route('/{record}/edit'),
         ];
     }
 }

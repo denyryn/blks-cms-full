@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Models\UserAddress;
 use App\Http\Resources\UserAddressResource;
 use App\Http\Requests\StoreUserAddressRequest;
@@ -96,7 +97,7 @@ class UserAddressController extends Controller
                 Response::HTTP_CREATED
             );
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return $this->errorResponse(
                 'Failed to create address: ' . $e->getMessage(),
@@ -146,7 +147,7 @@ class UserAddressController extends Controller
                 'User address updated successfully.'
             );
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return $this->errorResponse(
                 'Failed to update address: ' . $e->getMessage(),

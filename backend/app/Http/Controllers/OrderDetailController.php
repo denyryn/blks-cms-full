@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Http\Requests\StoreOrderDetailRequest;
 use App\Http\Requests\UpdateOrderDetailRequest;
 use App\Http\Resources\OrderDetailResource;
@@ -59,7 +60,7 @@ class OrderDetailController extends Controller
                 'Order detail created successfully.',
                 201
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse('Failed to create order detail.', 500);
         }
     }
@@ -90,7 +91,7 @@ class OrderDetailController extends Controller
                 new OrderDetailResource($orderDetail),
                 'Order detail updated successfully.'
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse('Failed to update order detail.', 500);
         }
     }
@@ -107,7 +108,7 @@ class OrderDetailController extends Controller
                 null,
                 'Order detail deleted successfully.'
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse('Failed to delete order detail.', 500);
         }
     }

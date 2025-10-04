@@ -17,7 +17,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Guava\FilamentIconPicker\Forms\IconPicker;
 
-class ServiceFormPage extends Page implements HasForms
+class AboutFormPage extends Page implements HasForms
 {
     use InteractsWithForms;
 
@@ -25,13 +25,13 @@ class ServiceFormPage extends Page implements HasForms
 
     protected static string | \UnitEnum | null $navigationGroup = 'CMS';
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $navigationLabel = 'Service Page';
+    protected static ?string $navigationLabel = 'About Page';
     protected static ?int $navigationSort = 4;
     public static bool $shouldRegisterNavigation = true;
 
-    protected string $view = 'filament.pages.service-form-page';
+    protected string $view = 'filament.pages.about-form-page';
 
-    protected ?string $pageKey = 'service_page';
+    protected ?string $pageKey = 'about_page';
 
     public function mount(): void
     {
@@ -47,8 +47,9 @@ class ServiceFormPage extends Page implements HasForms
         return $schema
             ->components([
                 $this->heroSection(),
-                $this->whySection(),
-                $this->procedureSection()
+                $this->valueSection(),
+                $this->recordSection(),
+                $this->ctaSection()
             ])
             ->statePath('data');
     }
@@ -72,114 +73,97 @@ class ServiceFormPage extends Page implements HasForms
                     ->required()
                     ->maxLength(255)
                     ->helperText('Short description shown to visitors.'),
-                Repeater::make('hero.services')
-                    ->label('Services')
-                    ->grid(2)
+                Repeater::make('hero.achievements')
+                    ->label('Achievements')
                     ->schema([
                         Group::make([
-                            IconPicker::make('icon')
+                            IconPicker::make('icon_picker')
                                 ->sets(['lucide'])
                                 ->label('Icon Picker')
                                 ->required()
-                                ->helperText('Select an icon for the Service.'),
-                            ColorPicker::make('color')
-                                ->label('Color')
+                                ->helperText('Select an icon for the achievement.'),
+                            TextInput::make('number')
+                                ->label('Number')
                                 ->required()
-                                ->helperText('Select a color for the Service.'),
+                                ->maxLength(20)
+                                ->helperText('Achievement number, e.g., 100+'),
                         ])->columns(2),
-                        TextInput::make('title')
-                            ->label('Title')
+                        TextInput::make('label')
+                            ->label('Label')
                             ->required()
                             ->maxLength(50)
-                            ->helperText('Service title, e.g., Projects Completed'),
+                            ->helperText('Achievement label, e.g., Projects Completed'),
                         TextInput::make('description')
                             ->label('Description')
                             ->required()
                             ->maxLength(100)
-                            ->helperText('Short description of the Service.'),
+                            ->helperText('Short description of the achievement.'),
                     ])
                     ->minItems(1)
                     ->maxItems(10)
                     ->columnSpanFull()
-                    ->createItemButtonLabel('Add Service'),
+                    ->createItemButtonLabel('Add Achievement'),
             ]);
     }
 
-    protected function whySection(): Section
+    protected function valueSection(): Section
     {
-        return Section::make('Why Us Section')
+        return Section::make('Value Section')
             ->collapsible()
             ->schema([
-                TextInput::make('why.title')
-                    ->label('Title')
-                    ->required(),
-                TextInput::make('why.description')
-                    ->label('Description')
-                    ->required(),
-                Repeater::make('why.advantages')
-                    ->label('Advantages')
-                    ->grid(2)
+                Repeater::make('values')
+                    ->label('Values')
                     ->schema([
                         IconPicker::make('icon')
                             ->sets(['lucide'])
-                            ->label('Icon'),
-                        TextInput::make('title')
-                            ->label('Title')
-                            ->required(),
-                        Textarea::make('description')
+                            ->label('Icon')
+                            ->required()
+                            ->helperText('Select an icon for the value.'),
+                        TextInput::make('label')
+                            ->label('Label')
+                            ->required()
+                            ->maxLength(50)
+                            ->helperText('Value label, e.g., Feature A'),
+                        TextInput::make('description')
                             ->label('Description')
                             ->required()
-                            ->columnSpanFull(),
-                        Repeater::make('sub')
-                            ->label('Sub Advantages')
-                            ->columnSpanFull()
-                            ->grid(2)
-                            ->schema([
-                                TextInput::make('description')
-                                    ->label('Description')
-                                    ->required(),
-                            ])
+                            ->maxLength(100)
+                            ->helperText('Short description of the value.'),
+                        Group::make([
+                            ColorPicker::make('color')
+                                ->helperText('Color for card value')
+                        ])
                     ])
             ]);
     }
 
-    protected function procedureSection(): Section
+    protected function recordSection(): Section
     {
-        return Section::make('How to Order Section')
+        return Section::make('Record Section')
             ->collapsible()
             ->schema([
-                TextInput::make('procedure.title')
+                TextInput::make('record.title')
                     ->label('Title')
                     ->required(),
-                TextInput::make('procedure.description')
+                Textarea::make('record.description')
                     ->label('Description')
                     ->required(),
-                Repeater::make('procedure.steps')
-                    ->label('Steps')
+                Repeater::make('record.milestones')
+                    ->label('Milestones')
                     ->schema([
-                        TextInput::make('number')
-                            ->label('Step Number')
-                            ->required(),
-                        TextInput::make('title')
-                            ->label('Title')
-                            ->required(),
-                        Textarea::make('description')
-                            ->label('Description')
+                        TextInput::make('year')
+                            ->label('Year')
+                            ->type('number')
                             ->required(),
                         Group::make([
-                            ColorPicker::make('color')
-                                ->label('Color')
+                            TextInput::make('title')
+                                ->label('Title')
+                                ->required(),
+                            TextInput::make('description')
+                                ->label('Description')
                                 ->required()
-                                ->helperText('Select a color for the Step.'),
                         ])
-                    ]),
-                Repeater::make('procedure.guarantees')
-                    ->label('Guarantees')
-                    ->schema([
-                        Textarea::make('label')
-                            ->label('Label')
-                            ->required(),
-                    ])
+                    ])->columns(2)
             ]);
     }
 
@@ -192,15 +176,13 @@ class ServiceFormPage extends Page implements HasForms
                     ->sets(['lucide'])
                     ->label('icon'),
                 TextInput::make('cta.title')
-                    ->label('Title')
-                    ->required()
-                    ->maxLength(120),
+                    ->label('title')
+                    ->required(),
                 Textarea::make('cta.description')
-                    ->label('Description')
+                    ->label('description')
                     ->required()
             ]);
     }
-
     /* -----------------------------------------------------------------
     |  Save
     | ----------------------------------------------------------------- */
@@ -218,7 +200,7 @@ class ServiceFormPage extends Page implements HasForms
         Content::saveAndCache($this->pageKey, $this->data);
 
         Notification::make()
-            ->title('Service page saved')
+            ->title('About page saved')
             ->success()
             ->send();
     }

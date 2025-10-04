@@ -2,10 +2,20 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\OrderDetailResource\Pages\ListOrderDetails;
+use App\Filament\Resources\OrderDetailResource\Pages\CreateOrderDetail;
+use App\Filament\Resources\OrderDetailResource\Pages\EditOrderDetail;
 use App\Filament\Resources\OrderDetailResource\Pages;
 use App\Models\OrderDetail;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -14,31 +24,31 @@ class OrderDetailResource extends Resource
 {
     protected static ?string $model = OrderDetail::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
-    protected static ?string $navigationGroup = 'Manajemen Transaksi';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-receipt-percent';
+    protected static string | \UnitEnum | null $navigationGroup = 'Manajemen Transaksi';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('order_id')
+        return $schema
+            ->components([
+                Select::make('order_id')
                     ->label('Order')
                     ->relationship('order', 'id')
                     ->searchable()
                     ->required(),
 
-                Forms\Components\Select::make('product_id')
+                Select::make('product_id')
                     ->label('Produk')
                     ->relationship('product', 'name')
                     ->searchable()
                     ->required(),
 
-                Forms\Components\TextInput::make('quantity')
+                TextInput::make('quantity')
                     ->label('Jumlah')
                     ->numeric()
                     ->required(),
 
-                Forms\Components\TextInput::make('price')
+                TextInput::make('price')
                     ->label('Harga Satuan')
                     ->numeric()
                     ->required(),
@@ -49,20 +59,20 @@ class OrderDetailResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')->sortable(),
-                Tables\Columns\TextColumn::make('order.id')->label('Order ID'),
-                Tables\Columns\TextColumn::make('product.name')->label('Produk'),
-                Tables\Columns\TextColumn::make('quantity'),
-                Tables\Columns\TextColumn::make('price')->money('idr', true),
-                Tables\Columns\TextColumn::make('created_at')->dateTime('d M Y H:i'),
+                TextColumn::make('id')->sortable(),
+                TextColumn::make('order.id')->label('Order ID'),
+                TextColumn::make('product.name')->label('Produk'),
+                TextColumn::make('quantity'),
+                TextColumn::make('price')->money('idr', true),
+                TextColumn::make('created_at')->dateTime('d M Y H:i'),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                DeleteBulkAction::make(),
             ]);
     }
 
@@ -74,9 +84,9 @@ class OrderDetailResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListOrderDetails::route('/'),
-            'create' => Pages\CreateOrderDetail::route('/create'),
-            'edit' => Pages\EditOrderDetail::route('/{record}/edit'),
+            'index' => ListOrderDetails::route('/'),
+            'create' => CreateOrderDetail::route('/create'),
+            'edit' => EditOrderDetail::route('/{record}/edit'),
         ];
     }
 }

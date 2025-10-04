@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
@@ -98,7 +100,7 @@ class UserController extends Controller
                 'User created successfully.',
                 Response::HTTP_CREATED
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse(
                 'Failed to create user: ' . $e->getMessage(),
                 Response::HTTP_INTERNAL_SERVER_ERROR
@@ -146,9 +148,9 @@ class UserController extends Controller
                 $resource,
                 'User retrieved successfully.'
             );
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse('User not found.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse(
                 'Failed to retrieve user: ' . $e->getMessage(),
                 Response::HTTP_INTERNAL_SERVER_ERROR
@@ -202,9 +204,9 @@ class UserController extends Controller
                 $resource,
                 'User updated successfully.'
             );
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse('User not found.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse(
                 'Failed to update user: ' . $e->getMessage(),
                 Response::HTTP_INTERNAL_SERVER_ERROR
@@ -237,9 +239,9 @@ class UserController extends Controller
                 null,
                 'User deleted successfully.'
             );
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse('User not found.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse(
                 'Failed to delete user: ' . $e->getMessage(),
                 Response::HTTP_INTERNAL_SERVER_ERROR

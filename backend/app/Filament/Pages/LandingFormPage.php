@@ -2,14 +2,17 @@
 
 namespace App\Filament\Pages;
 
+use Filament\Schemas\Schema;
+use Storage;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Models\Content;
 use Filament\Actions\Action;
 use Filament\Forms\Components\{ColorPicker, FileUpload, Group, Repeater, Section, Textarea, TextInput};
-use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
-use TomatoPHP\FilamentIcons\Components\IconPicker;
+use Guava\FilamentIconPicker\Forms\IconPicker;
 
 class LandingFormPage extends Page implements HasForms
 {
@@ -17,26 +20,29 @@ class LandingFormPage extends Page implements HasForms
 
     public ?array $data = [];
 
-    protected static ?string $navigationGroup = 'CMS';
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string | \UnitEnum | null $navigationGroup = 'CMS';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationLabel = 'Landing Page';
     protected static ?int $navigationSort = 3;
     public static bool $shouldRegisterNavigation = true;
 
-    protected static string $view = 'filament.pages.landing-form-page';
+    protected string $view = 'filament.pages.landing-form-page';
+
+    protected ?string $pageKey = 'landing_page';
 
     public function mount(): void
     {
-        $this->form->fill(); // preload here if you store settings
+        $this->data = Content::getCached($this->pageKey) ?? [];
+        $this->form->fill($this->data); // preload here if you store settings
     }
 
     /* -----------------------------------------------------------------
     |  Form
     | ----------------------------------------------------------------- */
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 $this->heroSection(),
                 $this->servicesSection(),
                 $this->productsSection(),
@@ -47,41 +53,48 @@ class LandingFormPage extends Page implements HasForms
     /* -----------------------------------------------------------------
     |  Sections
     | ----------------------------------------------------------------- */
-    protected function heroSection(): Section
+    protected function heroSection(): \Filament\Schemas\Components\Section
     {
-        return Section::make('Hero Section')
+        return \Filament\Schemas\Components\Section::make('Hero Section')
             ->collapsible()
             ->schema([
-                Group::make([
-                    TextInput::make('hero_title')
+                \Filament\Schemas\Components\Group::make([
+                    TextInput::make('hero.title')
                         ->label('Title')
                         ->required()
                         ->maxLength(120)
                         ->helperText('Big heading shown to visitors.'),
 
-                    Textarea::make('hero_description')
+                    Textarea::make('hero.description')
                         ->label('Subtitle')
                         ->required()
                         ->rows(1)
                         ->maxLength(280),
 
-                    FileUpload::make('hero_image')
+                    FileUpload::make('hero.image')
                         ->label('Image')
                         ->image()
-                        ->maxSize(2048)
+                        ->maxSize(1024 * 5) // 5MB
                         ->acceptedFileTypes(['image/jpeg', 'image/png'])
-                        ->directory('landing/hero')
                         ->preserveFilenames()
+                        ->multiple(false)
+                        ->saveUploadedFileUsing(fn($file) =>
+                            $file->store('landing/hero', 'public'))
+                        ->deleteUploadedFileUsing(fn($file) =>
+                            Storage::disk('public')->delete($file))
                         ->columnSpanFull(),
                 ])->columns(2),
 
-                Repeater::make('hero_features')
+                Repeater::make('hero.features')
                     ->label('Main Features')
                     ->minItems(1)
                     ->maxItems(6)
                     ->columns(3)
                     ->schema([
-                        IconPicker::make('icon')->required()->columnSpan(1),
+                        IconPicker::make('icon')
+                            ->sets(['lucide'])
+                            ->required()
+                            ->columnSpan(1),
                         TextInput::make('label')
                             ->required()
                             ->placeholder('Feature text')
@@ -91,27 +104,27 @@ class LandingFormPage extends Page implements HasForms
             ]);
     }
 
-    protected function servicesSection(): Section
+    protected function servicesSection(): \Filament\Schemas\Components\Section
     {
-        return Section::make('Services Section')
+        return \Filament\Schemas\Components\Section::make('Services Section')
             ->collapsible()
             ->schema([
-                TextInput::make('services_title')
+                TextInput::make('services.title')
                     ->label('Section Title')
                     ->required()
                     ->maxLength(120),
 
-                Textarea::make('services_description')
+                Textarea::make('services.description')
                     ->label('Section Description')
                     ->required()
                     ->rows(3)
                     ->maxLength(280),
 
-                Repeater::make('services_items')
+                Repeater::make('services.items')
                     ->label('Service Items')
                     ->minItems(1)
                     ->schema([
-                        Group::make([
+                        \Filament\Schemas\Components\Group::make([
                             TextInput::make('title')
                                 ->required()
                                 ->maxLength(80),
@@ -127,17 +140,17 @@ class LandingFormPage extends Page implements HasForms
             ]);
     }
 
-    protected function productsSection(): Section
+    protected function productsSection(): \Filament\Schemas\Components\Section
     {
-        return Section::make('Products Section')
+        return \Filament\Schemas\Components\Section::make('Products Section')
             ->collapsible()
             ->schema([
-                TextInput::make('products_title')
+                TextInput::make('products.title')
                     ->label('Section Title')
                     ->required()
                     ->maxLength(120),
 
-                Textarea::make('products_description')
+                Textarea::make('products.description')
                     ->label('Section Description')
                     ->required()
                     ->rows(3)
@@ -148,22 +161,36 @@ class LandingFormPage extends Page implements HasForms
     /* -----------------------------------------------------------------
     |  Save
     | ----------------------------------------------------------------- */
+    protected function sanitizeUploads($data)
+    {
+        foreach ($data as $key => $value) {
+            if ($value instanceof TemporaryUploadedFile) {
+                // Store and replace with path
+                $data[$key] = $value->store('landing/hero', 'public');
+            } elseif (is_array($value)) {
+                $data[$key] = $this->sanitizeUploads($value); // recursive check
+            }
+        }
+        return $data;
+    }
+
     protected function getFormActions(): array
     {
         return [
             Action::make('save')
                 ->label(__('filament-panels::resources/pages/edit-record.form.actions.save.label'))
-                ->submit('save'),
+                ->action('save'),
         ];
     }
 
     public function save(): void
     {
-        // TODO: store $this->data in DB / cache / settings table
-        // Settings::set('landing_page', $this->data);
+        $this->data = $this->sanitizeUploads($this->data);
+
+        Content::saveAndCache($this->pageKey, $this->data);
 
         Notification::make()
-            ->title('Landing page saved')
+            ->title('Landing page saved successfully')
             ->success()
             ->send();
     }
